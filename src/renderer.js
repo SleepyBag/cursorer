@@ -1,7 +1,8 @@
-const zhutixButton = document.getElementById("zhutixButton");
-zhutixButton.onclick = () => openWebsiteInNewWindow("https://zhutix.com/tag/cursors/");
-const deviantArtButton = document.getElementById("deviantArtButton");
-deviantArtButton.onclick = () => openWebsiteInNewWindow("https://www.deviantart.com/tag/cursors");
+const buttons = document.getElementsByTagName("button");
+for (let i = 0; i < buttons.length; i++) {
+    const button = buttons[i];
+    button.onclick = () => openWebsiteInNewWindow(button.getAttribute("target"));
+}
 
 function openWebsiteInNewWindow(url) {
   // Create the browser window.
