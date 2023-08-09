@@ -2,7 +2,8 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require("fs");
 const unrar = require('node-unrar-js');
-const decompress = require('decompress')
+const sevenBin = require('7zip-bin');
+const { extractFull } = require('node-7z');
 const { exec } = require('child_process');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -49,9 +50,8 @@ const createWindow = () => {
     item.once('done', async (event, state) => {
       if (state === 'completed') {
         console.log(`Download successfully to ${downloadPath}`)
-        var extractedPath = null;
+        const extractedPath = downloadPath.substring(0, downloadPath.lastIndexOf('.'));
         if (downloadPath.endsWith(".rar")) {
-          extractedPath = downloadPath.substring(0, downloadPath.length - 4);
           const extractor = await unrar.createExtractorFromFile({ filepath: downloadPath, targetPath: extractedPath });
           const extracted = extractor.extract({});
           for (const file of extracted.files) {
@@ -59,8 +59,15 @@ const createWindow = () => {
           }
         }
         else if (downloadPath.endsWith(".zip")) {
-          extractedPath = downloadPath.substring(0, downloadPath.length - 4);
-          await decompress(downloadPath, extractedPath);
+          var extractionStream = extractFull(downloadPath, extractedPath, { $bin: sevenBin.path7za });
+          await new Promise((resolve, reject) => {
+            extractionStream.on('end', () => {
+              console.log(`Extracted files to ${extractedPath}`);
+              resolve();  
+            }).on('error', err => {
+              reject(err);
+            });
+          });
           console.log(`Extracted files to ${extractedPath}`);
         }
         const filenames = getAllFiles(extractedPath);
