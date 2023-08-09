@@ -4,7 +4,6 @@ const fs = require("fs");
 const unrar = require('node-unrar-js');
 const decompress = require('decompress')
 const { exec } = require('child_process');
-const iconv = require('iconv-lite');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -30,15 +29,15 @@ const getAllFiles = function(dirPath, arrayOfFiles) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: 100,
+    height: 150,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      webviewTag: true
     },
   });
 
-  // and load the index.html of the app.
-  mainWindow.loadURL('https://zhutix.com/tag/cursors');
+  mainWindow.loadFile('src/index.html');
 
   mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
     // Set the save path, making Electron not to prompt a save dialog.
