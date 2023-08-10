@@ -5,6 +5,7 @@ const unrar = require('node-unrar-js');
 const sevenBin = require('7zip-bin');
 const { extractFull } = require('node-7z');
 const { exec } = require('child_process');
+const bsplit = require('buffer-split');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -73,10 +74,19 @@ const createWindow = () => {
         const filenames = getAllFiles(extractedPath);
         const infs = filenames.filter(filename => filename.endsWith(".inf"));
         infs.forEach(inf => {
-          const filename = inf;
+          // TODO: Add a counter call after installation, and monitor the counter to open settings when all done
+          // remove rundll32 call which opens mouse pointer selection window from the install inf
+          const lines = bsplit(fs.readFileSync(inf), Buffer.from('\n'))
+                        .filter(line => !line.toString().toLowerCase().includes('rundll32'));
+          const newInf = path.join(path.dirname(inf), `new.${path.basename(inf)}`);
+          const filtered = lines.reduce((prev, b) => Buffer.concat([prev, Buffer.from('\n'), b]));
+          fs.writeFileSync(newInf, filtered);
+
+          const filename = newInf;
           console.log(`Installing ${filename}`);
           exec(`RUNDLL32.EXE SETUPAPI.DLL,InstallHinfSection DefaultInstall 132 ${filename}`, {encoding: "utf8"});
         });
+        exec("rundll32.exe shell32.dll,Control_RunDLL main.cpl,,1")
       } else {
         console.log(`Download failed: ${state}`)
       }
