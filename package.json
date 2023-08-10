@@ -23,7 +23,8 @@
     "bootstrap": "^5.3.1",
     "7zip-bin": "^5.2.0",
     "node-7z": "^3.0.0",
-    "buffer-split": "^1.0.0"
+    "buffer-split": "^1.0.0",
+    "regedit": "^5.1.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.2.1",

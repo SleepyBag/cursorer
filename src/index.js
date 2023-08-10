@@ -31,11 +31,12 @@ const getAllFiles = function(dirPath, arrayOfFiles) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 100,
-    height: 150,
+    width: 1000,
+    height: 1000,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      webviewTag: true
+      webviewTag: true,
+      sandbox: false
     },
   });
 
