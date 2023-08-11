@@ -7,20 +7,24 @@
     <link href="../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
   </head>
   <body>
+    <script src="../node_modules/vue/dist/vue.global.js"></script>
     <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <div class="btn-group-vertical">
-        <button type="button" class="btn btn-primary" id="zhutixButton" target="https://zhutix.com/tag/cursors/">致美化</button>
-        <button type="button" class="btn btn-primary" id="deviantArtButton" target="https://www.deviantart.com/tag/cursors">Deviant Art</button>
-        <button type="button" class="btn btn-primary" id="vsThemesButton" target="https://vsthemes.org/en/cursors/">VS Themes</button>
-    </div>
-    <div>
-      <ul class="list-group" id="cursorSchemeList">
-        <li class="list-group-item" id="cursorSchemeItemTemplate">
-          <label tag="cursor-scheme-name">Cursor schemes will show here.</label>
-          <button class="btn btn-primary" tag="cursor-scheme-apply-button" style="float: right;">Apply</button>
-        </li>
-      </ul>
+    <div id="app">
+      <div class="btn-group-vertical">
+        <button type="button" class="btn btn-primary" v-for="link in links" @click="openWebsiteInNewWindow(link.url)">{{link.name}}</button>
+      </div>
+      <div>
+        <ul class="list-group" id="cursorSchemeList">
+          <table>
+            <tr v-for="cursorScheme in cursorSchemes">
+              <td><label>{{cursorScheme.name}}</label></td>
+              <td><img src="../pointer.cur" height="30" /></td>
+              <td><button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button></td>
+            </tr>
+          </table>
+        </ul>
+      </div>
     </div>
   </body>
-  <script src="./renderer.js"></script>
+  <script type="module" src="./renderer.js"></script>
 </html>

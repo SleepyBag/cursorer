@@ -1,3 +1,42 @@
+const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
+
+class Link {
+  constructor(name, url) {
+    this.name = name;
+    this.url = url;
+  }
+}
+
+const links = [
+  new Link("Zhutix", "https://zhutix.com/tag/cursors/"),
+  new Link("Deviant Art", "https://www.deviantart.com/tag/cursors"),
+  new Link("VS Themes", "https://vsthemes.org/en/cursors/"),
+];
+
+class CursorScheme {
+  constructor(name, paths) {
+    this.name = name;
+    paths = paths.split(',');
+    this.paths = {};
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      const keyName = cursorKeyNames[i];
+      this.paths[keyName] = path;
+    }
+  }
+
+  toRegValue() {
+    const valuesToPut = {};
+    for (const keyName in this.paths) {
+      const path = this.paths[keyName];
+      if (path.length > 0) {
+        valuesToPut[keyName] = { value: path, type: 'REG_EXPAND_SZ' };
+      }
+    }
+    return valuesToPut;
+  }
+}
+
 // link to websites
 const buttons = document.getElementsByTagName("button");
 for (let i = 0; i < buttons.length; i++) {
@@ -11,25 +50,12 @@ function openWebsiteInNewWindow(url) {
 }
 
 const cursorSchemesPath = 'HKCU\\Control Panel\\Cursors\\Schemes';
-const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
 const cursorSelectionPath = 'HKCU\\Control Panel\\Cursors';
 
-async function getAllCursorSchemes() {
-  return (await regedit.list(cursorSchemesPath))[cursorSchemesPath].values;
-}
-
-async function applyCursorScheme(schemeName) {
-  console.log(`Setting cursor scheme to "${schemeName}"`);
-  const schemeValue = (await getAllCursorSchemes())[schemeName];
-  const cursorPaths = schemeValue.value.split(',');
-  const valuesToPut = {};
-  for (let i = 0; i < cursorPaths.length; i++) {
-    const path = cursorPaths[i];
-    if (path.length > 0) {
-      const keyName = cursorKeyNames[i];
-      valuesToPut[keyName] = { value: path, type: 'REG_EXPAND_SZ' };
-    }
-  }
+async function applyCursorScheme(cursorScheme) {
+  console.log(`Setting cursor scheme to "${cursorScheme.name}"`);
+  const valuesToPut = cursorScheme.toRegValue();
+  console.log(valuesToPut);
   regedit.putValue({ [cursorSelectionPath] : valuesToPut }, error => {
     if (error !== undefined) {
       console.log(`Error when setting cursor scheme: ${error}`);
@@ -46,29 +72,25 @@ async function applyCursorScheme(schemeName) {
 }
 
 async function listCursorSchemes() {
-  const cursorSchemeItems = await getAllCursorSchemes();
-  const schemeListElement = document.getElementById('cursorSchemeList');
-  const cursorSchemeTemplateElement = document.getElementById('cursorSchemeItemTemplate');
-  schemeListElement.removeChild(cursorSchemeTemplateElement);
-  for (const schemeName in cursorSchemeItems) {
-    const schemeElement = cursorSchemeTemplateElement.cloneNode(true);
-    schemeElement.childNodes.forEach((element, key, parent) => {
-      if (element.nodeType == element.ELEMENT_NODE) {
-        switch (element.getAttribute('tag')) {
-          case 'cursor-scheme-name':
-            element.textContent = schemeName;
-            break;
-          case 'cursor-scheme-apply-button':
-            element.onclick = () => applyCursorScheme(schemeName);
-            break;
-          default:
-            break;
-        }
-      }
-    });
-    // schemeElement.textContent = schemeName;
-    schemeListElement.appendChild(schemeElement);
+  const schemesInReg = (await regedit.list(cursorSchemesPath))[cursorSchemesPath].values;
+  const schemes = [];
+  for (const schemeName in schemesInReg) {
+    schemes.push(new CursorScheme(schemeName, schemesInReg[schemeName].value));
   }
+  return schemes;
 }
 
-listCursorSchemes();
+var cursorSchemes = await listCursorSchemes();
+
+const app = Vue.createApp({
+  data() {
+    return {
+      links: links,
+      cursorSchemes: cursorSchemes,
+      applyCursorScheme: applyCursorScheme,
+      openWebsiteInNewWindow: openWebsiteInNewWindow,
+    }
+  }
+})
+
+app.mount('#app')
