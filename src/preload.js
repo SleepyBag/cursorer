@@ -3,5 +3,7 @@
 
 const { contextBridge } = require('electron');
 const regedit = require('regedit').promisified;
+const { exec } = require('child_process');
 
 contextBridge.exposeInMainWorld('regedit', regedit);
+contextBridge.exposeInMainWorld('exec', exec);

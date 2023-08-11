@@ -18,7 +18,7 @@ async function getAllCursorSchemes() {
   return (await regedit.list(cursorSchemesPath))[cursorSchemesPath].values;
 }
 
-async function useCursorScheme(schemeName) {
+async function applyCursorScheme(schemeName) {
   console.log(`Setting cursor scheme to "${schemeName}"`);
   const schemeValue = (await getAllCursorSchemes())[schemeName];
   const cursorPaths = schemeValue.value.split(',');
@@ -33,6 +33,14 @@ async function useCursorScheme(schemeName) {
   regedit.putValue({ [cursorSelectionPath] : valuesToPut }, error => {
     if (error !== undefined) {
       console.log(`Error when setting cursor scheme: ${error}`);
+    } else {
+      console.log(`Successfully set cursor scheme: ${error}`);
+      exec(`.\\utils\\RefreshCursor.exe`, {encoding: "utf8"}, (error, stdout, stderr) => {
+        console.log("RefreshCursor finished");
+        console.log(`Error: ${error}`);
+        console.log(`Stdout: ${stdout}`);
+        console.log(`Stderr: ${stderr}`);
+      });
     }
   });
 }
@@ -51,7 +59,7 @@ async function listCursorSchemes() {
             element.textContent = schemeName;
             break;
           case 'cursor-scheme-apply-button':
-            element.onclick = () => useCursorScheme(schemeName);
+            element.onclick = () => applyCursorScheme(schemeName);
             break;
           default:
             break;
