@@ -1,5 +1,12 @@
 const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
 
+function resolveEnvVar(string) {
+  while (string.includes('%') && string.indexOf('%') != string.lastIndexOf('%')) {
+    string = string.replace(/%.*%/, v => process.env[v.substring(0, v.length - 2)]);
+  }
+  return string;
+}
+
 class Link {
   constructor(name, url) {
     this.name = name;
@@ -34,6 +41,14 @@ class CursorScheme {
       }
     }
     return valuesToPut;
+  }
+
+  getNormalCursorPath() {
+    return resolveEnvVar(this.paths.Arrow);
+  }
+
+  getHandCursorPath() {
+    return resolveEnvVar(this.paths.Hand);
   }
 }
 

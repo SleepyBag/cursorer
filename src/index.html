@@ -16,9 +16,14 @@
       <div>
         <ul class="list-group" id="cursorSchemeList">
           <table>
+            <th>Name</th>
+            <th>Normal</th>
+            <th>Hand</th>
+            <th>Action</th>
             <tr v-for="cursorScheme in cursorSchemes">
               <td><label>{{cursorScheme.name}}</label></td>
-              <td><img src="../pointer.cur" height="30" /></td>
+              <td><img v-bind:src="cursorScheme.getNormalCursorPath()" height="30" /></td>
+              <td><img v-bind:src="cursorScheme.getHandCursorPath()" height="30" /></td>
               <td><button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button></td>
             </tr>
           </table>
