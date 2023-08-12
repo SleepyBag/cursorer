@@ -1,3 +1,7 @@
+import { AniCacher } from './aniCache.js'
+
+const aniCacher = new AniCacher(rootPath);
+
 const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
 
 function resolveEnvVar(string) {
@@ -30,6 +34,13 @@ class CursorScheme {
       const keyName = cursorKeyNames[i];
       this.paths[keyName] = path;
     }
+
+    this.normalCursorPath = Vue.ref(null);
+    this.handCursorPath = Vue.ref(null);
+    this.appStartingCursorPath = Vue.ref(null);
+    this.waitCursorPath = Vue.ref(null);
+
+    this.constructCursorPaths();
   }
 
   toRegValue() {
@@ -43,12 +54,20 @@ class CursorScheme {
     return valuesToPut;
   }
 
-  getNormalCursorPath() {
-    return resolveEnvVar(this.paths.Arrow);
+  async constructCursorPath(path) {
+    path = resolveEnvVar(path);
+    if (path.endsWith('.cur')) {
+      return path;
+    } if (path.endsWith('.ani')) {
+      return await aniCacher.getIconPathOfAni(path);
+    }
   }
 
-  getHandCursorPath() {
-    return resolveEnvVar(this.paths.Hand);
+  async constructCursorPaths() {
+    this.normalCursorPath.value = await this.constructCursorPath(this.paths.Arrow);
+    this.handCursorPath.value = await this.constructCursorPath(this.paths.Hand);
+    this.appStartingCursorPath.value = await this.constructCursorPath(this.paths.AppStarting)
+    this.waitCursorPath.value = await this.constructCursorPath(this.paths.Wait)
   }
 }
 
@@ -97,7 +116,7 @@ async function listCursorSchemes() {
 
 var cursorSchemes = await listCursorSchemes();
 
-const app = Vue.createApp({
+const vueApp = Vue.createApp({
   data() {
     return {
       links: links,
@@ -108,4 +127,4 @@ const app = Vue.createApp({
   }
 })
 
-app.mount('#app')
+vueApp.mount('#app')

@@ -15,17 +15,25 @@
       </div>
       <div>
         <ul class="list-group" id="cursorSchemeList">
-          <table>
-            <th>Name</th>
-            <th>Normal</th>
-            <th>Hand</th>
-            <th>Action</th>
-            <tr v-for="cursorScheme in cursorSchemes">
-              <td><label>{{cursorScheme.name}}</label></td>
-              <td><img v-bind:src="cursorScheme.getNormalCursorPath()" height="30" /></td>
-              <td><img v-bind:src="cursorScheme.getHandCursorPath()" height="30" /></td>
-              <td><button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button></td>
-            </tr>
+          <table class="table table-hover">
+            <thread class="thread-dark">
+              <th>Name</th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th>Action</th>
+            </thread>
+            <tbody>
+              <tr v-for="cursorScheme in cursorSchemes">
+                <td><label>{{cursorScheme.name}}</label></td>
+                <td><img v-bind:src="cursorScheme.normalCursorPath" height="30"/></td>
+                <td><img v-bind:src="cursorScheme.appStartingCursorPath" height="30"/></td>
+                <td><img v-bind:src="cursorScheme.waitCursorPath" height="30"/></td>
+                <td><img v-bind:src="cursorScheme.handCursorPath" height="30"/></td>
+                <td><button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button></td>
+              </tr>
+            </tbody>
           </table>
         </ul>
       </div>
