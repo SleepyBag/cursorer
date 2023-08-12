@@ -39,7 +39,10 @@
                 <td><img v-bind:src="cursorScheme.appStartingCursorPath" height="30"/></td>
                 <td><img v-bind:src="cursorScheme.waitCursorPath" height="30"/></td>
                 <td><img v-bind:src="cursorScheme.handCursorPath" height="30"/></td>
-                <td><button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button></td>
+                <td>
+                  <button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button>
+                  <button class="btn btn-danger" @click="deleteCursorScheme(cursorScheme)">Delete</button>
+                </td>
               </tr>
             </tbody>
           </table>

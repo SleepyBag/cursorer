@@ -94,7 +94,7 @@ async function applyCursorScheme(cursorScheme) {
     if (error !== undefined) {
       console.log(`Error when setting cursor scheme: ${error}`);
     } else {
-      console.log(`Successfully set cursor scheme: ${error}`);
+      console.log(`Successfully set cursor scheme to ${cursorScheme.name}`);
       exec(`.\\utils\\RefreshCursor.exe`, {encoding: "utf8"}, (error, stdout, stderr) => {
         console.log("RefreshCursor finished");
         console.log(`Error: ${error}`);
@@ -103,6 +103,19 @@ async function applyCursorScheme(cursorScheme) {
       });
     }
   });
+}
+
+async function deleteCursorScheme(cursorScheme) {
+  if (confirm(`Deleting cursor scheme ${cursorScheme.name}?`)) {
+    console.log(`Deleting cursor scheme to "${cursorScheme.name}"`);
+    regedit.deleteValue(cursorSchemesPath + '\\' + cursorScheme.name, error => {
+      if (error !== undefined) {
+        console.log(`Error when deleting cursor scheme: ${error}`);
+      } else {
+        console.log(`Successfully deleted cursor scheme ${cursorScheme.name}.`);
+      }
+    });
+  }
 }
 
 async function listCursorSchemes() {
@@ -122,6 +135,7 @@ const vueApp = Vue.createApp({
       links: links,
       cursorSchemes: cursorSchemes,
       applyCursorScheme: applyCursorScheme,
+      deleteCursorScheme: deleteCursorScheme,
       openWebsiteInNewWindow: openWebsiteInNewWindow,
     }
   }
