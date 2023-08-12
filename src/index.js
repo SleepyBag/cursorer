@@ -44,7 +44,6 @@ const createWindow = () => {
   mainWindow.loadFile('src/index.html');
 
   mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
-    // Set the save path, making Electron not to prompt a save dialog.
     const downloadDirectory = path.join(app.getAppPath(), "downloads");
     const downloadPath = path.join(downloadDirectory, item.getFilename())
     console.log(`Downloading to ${downloadPath}`)
@@ -88,7 +87,7 @@ const createWindow = () => {
           console.log(`Installing ${filename}`);
           exec(`RUNDLL32.EXE SETUPAPI.DLL,InstallHinfSection DefaultInstall 132 ${filename}`, {encoding: "utf8"});
         });
-        exec("rundll32.exe shell32.dll,Control_RunDLL main.cpl,,1")
+        // exec("rundll32.exe shell32.dll,Control_RunDLL main.cpl,,1")
       } else {
         console.log(`Download failed: ${state}`)
       }

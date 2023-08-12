@@ -3,16 +3,24 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap demo</title>
+    <title>Index</title>
     <link href="../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
   </head>
   <body>
     <script src="../node_modules/vue/dist/vue.global.js"></script>
-    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <div id="app">
-      <div class="btn-group-vertical">
-        <button type="button" class="btn btn-primary" v-for="link in links" @click="openWebsiteInNewWindow(link.url)">{{link.name}}</button>
-      </div>
+      <h1>
+        My Cursor Themes 
+        <button class="btn btn-primary" onClick="window.location.reload();">Refresh</button>
+        <span class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Install new themes
+          </button>
+          <ul class="dropdown-menu">
+            <li v-for="link in links"><a class="dropdown-item" @click="openWebsiteInNewWindow(link.url)">{{link.name}}</a></li>
+          </ul>
+        </span>
+      </h1>
       <div>
         <ul class="list-group" id="cursorSchemeList">
           <table class="table table-hover">
@@ -38,6 +46,7 @@
         </ul>
       </div>
     </div>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   </body>
   <script type="module" src="./renderer.js"></script>
 </html>
