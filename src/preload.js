@@ -87,24 +87,6 @@ function resolveStringWithDoublePercentVariable(raw, stringMap = process.env) {
     return raw;
 }
 
-class AddRegItem {
-    constructor(raw, stringMap) {
-        const values = raw.match(/((".*?"|[^",\s]*)(,|$))/g);
-        const [regRoot, subkey, valueEntryName, flags, value] = values;
-        this.regRoot = resolveStringWithDoublePercentVariable(
-            regRoot.substring(0, regRoot.length - 1), stringMap);
-        this.subkey = resolveStringWithDoublePercentVariable(
-            subkey.substring(0, subkey.length - 1), stringMap);
-        this.valueEntryName = resolveStringWithDoublePercentVariable(
-            valueEntryName.substring(0, valueEntryName.length - 1), stringMap);
-        this.flags = resolveStringWithDoublePercentVariable(
-            flags.substring(0, flags.length - 1), stringMap);
-        this.value = resolveStringWithDoublePercentVariable(
-            value, stringMap);
-        this.regPath = this.regRoot + '\\' + this.subkey;
-    }
-}
-
 contextBridge.exposeInMainWorld('regedit', regedit);
 contextBridge.exposeInMainWorld('exec', exec);
 contextBridge.exposeInMainWorld('fs', fs);
