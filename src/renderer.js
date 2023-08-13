@@ -1,3 +1,24 @@
+class DownloadingItem {
+  constructor(downloadPath) {
+    this.path = downloadPath;
+    this.filename = path.basename(this.path);
+    this.progress = 0;
+  }
+
+  updateProgress(progress) {
+    this.progress = Math.round(progress * 100);
+  }
+}
+
+const downloadingItems = Vue.reactive([]);
+onStartDownload((downloadPath) => {
+  downloadingItems.push(new DownloadingItem(downloadPath));
+});
+onUpdateDownload((downloadPath, progress) => {
+  console.log(`download update: ${downloadPath}: ${progress}`);
+  downloadingItems[0].updateProgress(progress);
+});
+
 import { AniCacher } from './aniCache.js'
 
 const aniCacher = new AniCacher(rootPath);
@@ -137,6 +158,7 @@ const vueApp = Vue.createApp({
       applyCursorScheme: applyCursorScheme,
       deleteCursorScheme: deleteCursorScheme,
       openWebsiteInNewWindow: openWebsiteInNewWindow,
+      downloadingItems: downloadingItems,
     }
   }
 })

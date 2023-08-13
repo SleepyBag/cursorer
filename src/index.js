@@ -48,6 +48,20 @@ const createWindow = () => {
     const downloadPath = path.join(downloadDirectory, item.getFilename())
     console.log(`Downloading to ${downloadPath}`)
     item.setSavePath(downloadPath)
+    mainWindow.webContents.send('start-download', downloadPath);
+
+    item.on('updated', (event, state) => {
+      console.log(`download update: ${state}`);
+      if (state === 'interrupted') {
+        console.log('Download is interrupted but can be resumed');
+      } else if (state === 'progressing') {
+        if (item.isPaused()) {
+          console.log('Download is paused');
+        } else {
+          mainWindow.webContents.send('update-download', downloadPath, item.getReceivedBytes() / item.getTotalBytes());
+        }
+      }
+    });
 
     item.once('done', async (event, state) => {
       if (state === 'completed') {
