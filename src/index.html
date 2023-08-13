@@ -36,7 +36,14 @@
               {{installationItem.name}}
             </td>
             <td>
-              <button class="btn btn-primary" @click="installationItem.install()">Install</button>
+              <button v-if="!installationItem.broken"
+                      class="btn btn-primary"
+                      @click="installationItem.install()">Install</button>
+              <button v-if="installationItem.broken"
+                      class="btn btn-primary disabled">Broken inf</button>
+            </td>
+            <td>
+              <label v-if="installationItem.broken">{{installationItem.error}}</label>
             </td>
           </tr>
         </table>

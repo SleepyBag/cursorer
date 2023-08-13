@@ -10,60 +10,108 @@ class DownloadingItem {
   }
 }
 
+function splitIniValue(value) {
+  const values = value.match(/((".*?"|[^",\s]*)(,|$))/g);
+  return values.map(s => s.trim());
+}
+
+function getByPath(object, path) {
+  for (const pathSection of path.split('.')) {
+      object = object[pathSection];
+  }
+  return object
+}
+
 class AddRegItem {
-    constructor(raw, stringMap) {
-        const values = raw.match(/((".*?"|[^",\s]*)(,|$))/g);
-        const [regRoot, subkey, valueEntryName, flags, value] = values;
-        this.regRoot = resolveStringWithDoublePercentVariable(
-            regRoot.substring(0, regRoot.length - 1), stringMap);
-        this.subkey = resolveStringWithDoublePercentVariable(
-            subkey.substring(0, subkey.length - 1), stringMap);
-        this.valueEntryName = resolveStringWithDoublePercentVariable(
-            valueEntryName.substring(0, valueEntryName.length - 1), stringMap);
-        this.flags = resolveStringWithDoublePercentVariable(
-            flags.substring(0, flags.length - 1), stringMap);
-        this.value = resolveStringWithDoublePercentVariable(
-            value, stringMap);
-        this.regPath = this.regRoot + '\\' + this.subkey;
-    }
+  constructor(raw, stringMap) {
+    const [regRoot, subkey, valueEntryName, flags, value] = splitIniValue(raw);
+    this.regRoot = resolveStringWithDoublePercentVariable(
+        regRoot.substring(0, regRoot.length - 1), stringMap);
+    this.subkey = resolveStringWithDoublePercentVariable(
+        subkey.substring(0, subkey.length - 1), stringMap);
+    this.valueEntryName = resolveStringWithDoublePercentVariable(
+        valueEntryName.substring(0, valueEntryName.length - 1), stringMap);
+    this.flags = resolveStringWithDoublePercentVariable(
+        flags.substring(0, flags.length - 1), stringMap);
+    this.value = resolveStringWithDoublePercentVariable(
+        value, stringMap);
+    this.regPath = this.regRoot + '\\' + this.subkey;
+  }
 }
 
 class InstallationItem {
   constructor(infPath, infItem) {
-    this.filename = infPath;
-    this.copyFiles = infItem.DefaultInstall.CopyFiles.split(',');
-    const addRegItems = [];
-    for (const addRegSectionName of infItem.DefaultInstall.AddReg.split(',')) {
+    this.broken = false;
+    try {
+      this.filename = infPath;
+      const stringMap = {};
+      for (const stringDefinition in infItem.Strings) {
+        stringMap[stringDefinition.toLowerCase()] = infItem.Strings[stringDefinition];
+      }
+      // parse registry part
+      const addRegItems = [];
+      for (const addRegSectionName of infItem.DefaultInstall.AddReg.split(',')) {
         if (addRegSectionName.length > 0) {
-            const addRegSectionPath = addRegSectionName.split('.');
-            var addRegSection = infItem;
-            for (const path of addRegSectionPath) {
-                addRegSection = addRegSection[path];
-            }
-            for (const addRegItemValue in addRegSection) {
-                addRegItems.push(new AddRegItem(addRegItemValue, infItem.Strings));
-            }
+          const addRegSection = getByPath(infItem, addRegSectionName);
+          for (const addRegItemValue in addRegSection) {
+            const addRegItem = new AddRegItem(addRegItemValue, stringMap);
+            addRegItems.push(addRegItem);
+          }
         }
+      }
+      this.addRegItem = addRegItems.filter(addRegItem => addRegItem.regPath === cursorSchemesPath)[0];
+      this.name = this.addRegItem.valueEntryName;
+
+      // parse file copy part
+      const sourceDir = path.dirname(infPath);
+      this.copyFiles = [];
+      for (const copyFileSectionName of infItem.DefaultInstall.CopyFiles.split(',')) {
+        if (infItem.DestinationDirs[copyFileSectionName] !== undefined) {
+          const destination = path.join(env.systemroot, resolveStringWithDoublePercentVariable(
+            splitIniValue(infItem.DestinationDirs[copyFileSectionName])[1], stringMap));
+          for (const sourceFile in getByPath(infItem, copyFileSectionName)) {
+            this.copyFiles.push({ source: path.join(sourceDir, sourceFile), target: path.join(destination, sourceFile) });
+          }
+        }
+      }
     }
-    this.addRegItem = addRegItems.filter(addRegItem => addRegItem.regPath === cursorSchemesPath)[0];
-    this.name = this.addRegItem.valueEntryName;
+    catch (e) {
+      this.broken = true;
+      this.error = e;
+    }
   }
 
   static async from(infPath) {
-    const infItem = ini.parse(await fs.readFile(infPath, 'utf8'));
+    const infItem = ini.parse(decode(await fs.readFile(infPath), 'gbk'));
     if (infItem.Strings === undefined) {
         infItem.Strings = {};
     }
     for (const stringName in infItem.Strings) {
         infItem.Strings[stringName] = removeQuotes(infItem.Strings[stringName]);
     }
-    infItem.Strings['10'] = env["SystemRoot"];
+    infItem.Strings['10'] = env.systemroot;
     const item = new InstallationItem(infPath, infItem);
     return item;
   }
 
   async install() {
-    await installInf(this.filename);
+    this.progress = 0;
+    var finished = 0;
+    const total = this.copyFiles.length + 1;
+    for (const copyFile of this.copyFiles) {
+      await fs.mkdir(path.dirname(copyFile.target), { recursive: true });
+      await fs.copyFile(copyFile.source, copyFile.target);
+      finished++;
+      this.progress = Math.round(finished / total);
+    }
+    regedit.putValue({ 
+      [cursorSchemesPath] : {
+        [this.name]: {
+          value: this.addRegItem.value,
+          type: 'REG_EXPAND_SZ',
+        }
+      }
+    });
   }
 }
 
@@ -74,7 +122,8 @@ onStartDownload((downloadPath) => {
 });
 onUpdateDownload((downloadPath, progress) => {
   console.log(`download update: ${downloadPath}: ${progress}`);
-  downloadingItems[0].updateProgress(progress);
+  downloadingItems.find(item => item.path === downloadPath)
+                  .updateProgress(progress);
 });
 onFinishDownload(async (downloadPath, state) => {
   if (state === 'completed') {
@@ -85,7 +134,6 @@ onFinishDownload(async (downloadPath, state) => {
     for (const inf of infs) {
       installationItems.push(await InstallationItem.from(inf));
     }
-    // exec("rundll32.exe shell32.dll,Control_RunDLL main.cpl,,1")
   } else {
     console.log(`Download failed: ${state}`)
   }
@@ -175,7 +223,6 @@ const cursorSelectionPath = 'HKCU\\Control Panel\\Cursors';
 async function applyCursorScheme(cursorScheme) {
   console.log(`Setting cursor scheme to "${cursorScheme.name}"`);
   const valuesToPut = cursorScheme.toRegValue();
-  console.log(valuesToPut);
   regedit.putValue({ [cursorSelectionPath] : valuesToPut }, error => {
     if (error !== undefined) {
       console.log(`Error when setting cursor scheme: ${error}`);

@@ -13,6 +13,7 @@ const sevenBin = require('7zip-bin');
 const { extractFull } = require('node-7z');
 const bsplit = require('buffer-split');
 const ini = require('ini');
+const iconv = require('iconv-lite');
 
 async function extractArchive(archivePath) {
     const extractedPath = archivePath.substring(0, archivePath.lastIndexOf('.'));
@@ -57,20 +58,6 @@ async function getAllFiles(dirPath, arrayOfFiles) {
     return arrayOfFiles
 }
 
-async function installInf(inf) {
-    // TODO: Add a counter call after installation, and monitor the counter to open settings when all done
-    // remove rundll32 call which opens mouse pointer selection window from the install inf
-    const lines = bsplit(await fs.readFile(inf), Buffer.from('\n'))
-                .filter(line => !line.toString().toLowerCase().includes('rundll32'));
-    const newInf = path.join(path.dirname(inf), `new.${path.basename(inf)}`);
-    const filtered = lines.reduce((prev, b) => Buffer.concat([prev, Buffer.from('\n'), b]));
-    await fs.writeFile(newInf, filtered);
-
-    const filename = newInf;
-    console.log(`Installing ${filename}`);
-    exec(`RUNDLL32.EXE SETUPAPI.DLL,InstallHinfSection DefaultInstall 132 ${filename}`, {encoding: "utf8"});
-}
-
 function removeQuotes(string) {
     if (string.startsWith('"') && string.endsWith('"')) {
         string = string.substring(1, string.length - 1);
@@ -81,8 +68,16 @@ function removeQuotes(string) {
 function resolveStringWithDoublePercentVariable(raw, stringMap = process.env) {
     raw = removeQuotes(raw);
     while (raw.includes('%') && raw.indexOf('%') != raw.lastIndexOf('%')) {
-        raw = raw.replace(/%[^%]*%/, v => {
-            return stringMap[v.substring(1, v.length - 1)]});
+        const resolved = raw.replace(/%[^%]*%/, variable => {
+            variable = variable.toLowerCase();                            // Windows just ignores case
+            value = stringMap[variable.substring(1, variable.length - 1)];
+            return value === undefined ? variable : value;
+        });
+        // there is a variable unresolved
+        if (raw === resolved) {
+            throw new Error(`Unresolved variable in ${raw}`);
+        }
+        raw = resolved;
     }
     return raw;
 }
@@ -91,13 +86,13 @@ contextBridge.exposeInMainWorld('regedit', regedit);
 contextBridge.exposeInMainWorld('exec', exec);
 contextBridge.exposeInMainWorld('fs', fs);
 contextBridge.exposeInMainWorld('ini', ini);
+contextBridge.exposeInMainWorld('decode', iconv.decode);
 contextBridge.exposeInMainWorld('stringHash', stringHash);
 contextBridge.exposeInMainWorld('path', path);
-contextBridge.exposeInMainWorld('env', { "SystemRoot": process.env.SystemRoot });
+contextBridge.exposeInMainWorld('env', { "systemroot": process.env.SystemRoot });
 contextBridge.exposeInMainWorld('rootPath', rootPath);
 contextBridge.exposeInMainWorld('extractArchive', extractArchive);
 contextBridge.exposeInMainWorld('getAllFiles', getAllFiles);
-contextBridge.exposeInMainWorld('installInf', installInf);
 contextBridge.exposeInMainWorld('resolveStringWithDoublePercentVariable', resolveStringWithDoublePercentVariable);
 contextBridge.exposeInMainWorld('removeQuotes', removeQuotes);
 contextBridge.exposeInMainWorld('onStartDownload', (handler) => ipcRenderer.on('start-download', (event, ...args) => handler(...args)));
