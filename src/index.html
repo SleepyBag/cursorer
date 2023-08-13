@@ -28,6 +28,19 @@
           </tr>
         </table>
       </div>
+      <div v-if="installationItems.length > 0">
+        <h1>Downloaded</h1>
+        <table class="table table-hover">
+          <tr v-for="installationItem in installationItems">
+            <td>
+              {{installationItem.name}}
+            </td>
+            <td>
+              <button class="btn btn-primary" @click="installationItem.install()">Install</button>
+            </td>
+          </tr>
+        </table>
+      </div>
       <h1>
         My Cursor Themes 
         <button class="btn btn-primary" onClick="window.location.reload();">Refresh</button>
