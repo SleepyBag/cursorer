@@ -9,6 +9,25 @@
   <body>
     <script src="../node_modules/vue/dist/vue.global.js"></script>
     <div id="app">
+      <div v-if="downloadingItems.length > 0">
+        <h1>Downloading</h1>
+        <table class="table table-hover">
+          <tr v-for="downloadingItem in downloadingItems">
+            <td style="max-width: 100px; width: 100px;">
+              {{downloadingItem.filename}}
+              <span class="progress">
+                <span class="progress-bar progress-bar-striped progress-bar-animated" 
+                      role="progressbar" 
+                      v-bind:aria-valuenow="downloadingItem.progress" 
+                      aria-valuemin="0" 
+                      aria-valuemax="100" 
+                      v-bind:style="`width: ${downloadingItem.progress}%`">
+                </span>
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
       <h1>
         My Cursor Themes 
         <button class="btn btn-primary" onClick="window.location.reload();">Refresh</button>
