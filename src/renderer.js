@@ -23,19 +23,26 @@ function getByPath(object, path) {
 }
 
 class AddRegItem {
-  constructor(raw, stringMap) {
-    const [regRoot, subkey, valueEntryName, flags, value] = splitIniValue(raw);
-    this.regRoot = resolveStringWithDoublePercentVariable(
+  constructor(regPath, valueEntryName, flags, value) {
+    this.regPath = regPath;
+    this.valueEntryName = valueEntryName;
+    this.flags = flags;
+    this.value = value;
+  }
+
+  static fromIniString(raw, stringMap) {
+    var [regRoot, subkey, valueEntryName, flags, value] = splitIniValue(raw);
+    regRoot = resolveStringWithDoublePercentVariable(
         regRoot.substring(0, regRoot.length - 1), stringMap);
-    this.subkey = resolveStringWithDoublePercentVariable(
+    subkey = resolveStringWithDoublePercentVariable(
         subkey.substring(0, subkey.length - 1), stringMap);
-    this.valueEntryName = resolveStringWithDoublePercentVariable(
+    valueEntryName = resolveStringWithDoublePercentVariable(
         valueEntryName.substring(0, valueEntryName.length - 1), stringMap);
-    this.flags = resolveStringWithDoublePercentVariable(
+    flags = resolveStringWithDoublePercentVariable(
         flags.substring(0, flags.length - 1), stringMap);
-    this.value = resolveStringWithDoublePercentVariable(
+    value = resolveStringWithDoublePercentVariable(
         value, stringMap);
-    this.regPath = this.regRoot + '\\' + this.subkey;
+    return new AddRegItem(regRoot + '\\' + subkey, valueEntryName, flags, value);
   }
 }
 
@@ -54,12 +61,40 @@ class InstallationItem {
         if (addRegSectionName.length > 0) {
           const addRegSection = getByPath(infItem, addRegSectionName);
           for (const addRegItemValue in addRegSection) {
-            const addRegItem = new AddRegItem(addRegItemValue, stringMap);
-            addRegItems.push(addRegItem);
+            try {
+              const addRegItem = AddRegItem.fromIniString(addRegItemValue, stringMap);
+              addRegItems.push(addRegItem);
+            }
+            catch {
+            }
           }
         }
       }
-      this.addRegItem = addRegItems.filter(addRegItem => addRegItem.regPath === cursorSchemesPath)[0];
+      const schemeRegItem = addRegItems.filter(addRegItem => addRegItem.regPath === cursorSchemesPath)[0];
+      if (schemeRegItem !== undefined) {
+        this.addRegItem = schemeRegItem;
+      }
+      else {
+        // For some cursor packs, the scheme definition is actually broken. 
+        // The correct behavior of them relies on the cursor selection registry values.
+        const cursorRegItems = addRegItems.filter(addRegItem => addRegItem.regPath === cursorSelectionPath);
+        console.log(cursorRegItems);
+        const schemeName = cursorRegItems.find(addRegItem => addRegItem.valueEntryName === "").value;
+        console.log(schemeName);
+        const cursorPaths = [];
+        for (const cursorKeyName of cursorKeyNames) {
+          const cursorRegValue = cursorRegItems.find(addRegItem => addRegItem.valueEntryName === cursorKeyName);
+          // some cursor may be missing
+          if (cursorRegValue !== undefined) {
+            cursorPaths.push(cursorRegValue.value);
+          }
+          else {
+            cursorPaths.push("");
+          }
+        }
+        const cursorSchemeRegValue = cursorPaths.join(',');
+        this.addRegItem = new AddRegItem(cursorSchemesPath, schemeName, "", cursorSchemeRegValue);
+      }
       this.name = this.addRegItem.valueEntryName;
 
       // parse file copy part
