@@ -1,13 +1,18 @@
-class DownloadingItem {
-  constructor(downloadPath) {
+class DownloadItem {
+  constructor(downloadPath, completed = false) {
     this.path = downloadPath;
     this.filename = path.basename(this.path);
     this.progress = 0;
+    this.completed = false;
     this.installationItems = [];
   }
 
   updateProgress(progress) {
     this.progress = Math.round(progress * 100);
+  }
+
+  complete() {
+    this.completed = true;
   }
 }
 
@@ -52,6 +57,7 @@ class InstallationItem {
     this.broken = false;
     try {
       this.filename = infPath;
+      this.installed = false;
       const stringMap = {};
       for (const stringDefinition in infItem.Strings) {
         stringMap[stringDefinition.toLowerCase()] = infItem.Strings[stringDefinition];
@@ -119,6 +125,7 @@ class InstallationItem {
 
   static async from(infPath) {
     const infItem = ini.parse(decode(await fs.readFile(infPath), 'gbk'));
+    console.log(infItem);
     if (infItem.Strings === undefined) {
         infItem.Strings = {};
     }
@@ -134,39 +141,46 @@ class InstallationItem {
     item.handCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Hand")]).source);
     item.appStartingCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("AppStarting")]).source);
     item.waitCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Wait")]).source);
+
+    item.installed = cursorSchemes[item.name] !== undefined;
     return item;
   }
 
   async install() {
-    this.progress = 0;
-    var finished = 0;
-    const total = this.copyFiles.length + 1;
-    for (const copyFile of this.copyFiles) {
-      await fs.mkdir(path.dirname(copyFile.target), { recursive: true });
-      await fs.copyFile(copyFile.source, copyFile.target);
-      finished++;
-      this.progress = Math.round(finished / total);
-    }
-    regedit.putValue({ 
-      [cursorSchemesPath] : {
-        [this.name]: {
-          value: this.addRegItem.value,
-          type: 'REG_EXPAND_SZ',
-        }
+    try {
+      this.progress = 0;
+      var finished = 0;
+      const total = this.copyFiles.length + 1;
+      for (const copyFile of this.copyFiles) {
+        await fs.mkdir(path.dirname(copyFile.target), { recursive: true });
+        await fs.copyFile(copyFile.source, copyFile.target);
+        finished++;
+        this.progress = Math.round(finished / total);
       }
-    });
+      regedit.putValue({ 
+        [cursorSchemesPath] : {
+          [this.name]: {
+            value: this.addRegItem.value,
+            type: 'REG_EXPAND_SZ',
+          }
+        }
+      });
+      this.installed = true;
+    }
+    catch (e) {
+      alert(`Installation fail because of the following error: \n${e}`);
+    }
     refreshCursorSchemes();
   }
 }
 
-const downloadingItems = Vue.reactive([]);
+const downloadItems = Vue.reactive({});
 onStartDownload((downloadPath) => {
-  downloadingItems.push(new DownloadingItem(downloadPath));
+  downloadItems[downloadPath] = new DownloadItem(downloadPath);
 });
 onUpdateDownload((downloadPath, progress) => {
   console.log(`download update: ${downloadPath}: ${progress}`);
-  downloadingItems.find(item => item.path === downloadPath)
-                  .updateProgress(progress);
+  downloadItems[downloadPath].updateProgress(progress);
 });
 onFinishDownload(async (downloadPath, state) => {
   if (state === 'completed') {
@@ -174,9 +188,10 @@ onFinishDownload(async (downloadPath, state) => {
     const extractedPath = await extractArchive(downloadPath);
     const filenames = await getAllFiles(extractedPath);
     const infs = filenames.filter(filename => filename.endsWith(".inf"));
-    const downloadingItem = downloadingItems.find(item => item.path === downloadPath);
+    const downloadItem = downloadItems[downloadPath];
+    downloadItem.complete();
     for (const inf of infs) {
-      downloadingItem.installationItems.push(await InstallationItem.from(inf));
+      downloadItem.installationItems.push(await InstallationItem.from(inf));
     }
   } else {
     console.log(`Download failed: ${state}`)
@@ -302,6 +317,10 @@ async function refreshCursorSchemes() {
 
 await refreshCursorSchemes(cursorSchemes);
 
+async function deleteDownloadItem(downloadItem) {
+  delete downloadItems[downloadItem.path];
+}
+
 const vueApp = Vue.createApp({
   data() {
     return {
@@ -311,7 +330,8 @@ const vueApp = Vue.createApp({
       deleteCursorScheme: deleteCursorScheme,
       openWebsiteInNewWindow: openWebsiteInNewWindow,
       refreshCursorSchemes: refreshCursorSchemes,
-      downloadingItems: downloadingItems,
+      deleteDownloadItem: deleteDownloadItem,
+      downloadItems: downloadItems,
     }
   }
 })

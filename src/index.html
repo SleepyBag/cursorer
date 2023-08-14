@@ -9,29 +9,36 @@
   <body>
     <script src="../node_modules/vue/dist/vue.global.js"></script>
     <div id="app" class="card card-body">
-      <div v-if="downloadingItems.length > 0">
-        <h1>Downloading</h1>
+      <div v-if="Object.keys(downloadItems).length > 0">
+        <h1>Download Items</h1>
         <table class="table table-hover">
-          <tr v-for="downloadingItem in downloadingItems">
+          <tr v-for="downloadItem in Object.values(downloadItems)">
             <td style="max-width: 100px; width: 100px;">
-              {{downloadingItem.filename}}
-              <button class="btn btn-primary" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="`#download-collapse-${downloadingItem.filename}`" aria-expanded="true" v-bind:aria-controls="`download-collapse-${downloadingItem.filename}`">
+              {{downloadItem.filename}}
+              <button class="btn btn-primary" 
+                      type="button" 
+                      data-bs-toggle="collapse" 
+                      v-bind:data-bs-target="`#download-collapse-${downloadItem.filename}`" 
+                      aria-expanded="true" 
+                      v-bind:aria-controls="`download-collapse-${downloadItem.filename}`"
+                      v-if="downloadItem.completed">
                 Show installation
               </button>
-              <span class="progress">
+              <button class="btn btn-danger" @click="deleteDownloadItem(downloadItem)">Delete</button>
+              <span class="progress" v-if="!downloadItem.completed">
                 <span class="progress-bar progress-bar-striped progress-bar-animated" 
                       role="progressbar" 
-                      v-bind:aria-valuenow="downloadingItem.progress" 
+                      v-bind:aria-valuenow="downloadItem.progress" 
                       aria-valuemin="0" 
                       aria-valuemax="100" 
-                      v-bind:style="`width: ${downloadingItem.progress}%`">
+                      v-bind:style="`width: ${downloadItem.progress}%`">
                 </span>
               </span>
-              <div class="collapse" v-bind:id="`download-collapse-${downloadingItem.filename}`">
+              <div class="collapse" v-bind:id="`download-collapse-${downloadItem.filename}`">
                 <div class="card card-body">
-                  <div v-if="downloadingItem.installationItems.length > 0">
+                  <div v-if="downloadItem.installationItems.length > 0">
         <table class="table table-hover">
-                      <tr v-for="installationItem in downloadingItem.installationItems">
+                      <tr v-for="installationItem in downloadItem.installationItems">
             <td>
               {{installationItem.name}}
             </td>
@@ -40,9 +47,11 @@
                         <td><img v-bind:src="installationItem.waitCursorPath" height="30"/></td>
                         <td><img v-bind:src="installationItem.handCursorPath" height="30"/></td>
             <td>
-              <button v-if="!installationItem.broken"
+                          <button v-if="!installationItem.broken && !installationItem.installed"
                       class="btn btn-primary"
                       @click="installationItem.install()">Install</button>
+                          <button v-if="!installationItem.broken && installationItem.installed"
+                                  class="btn btn-primary disabled">Installed</button>
               <button v-if="installationItem.broken"
                       class="btn btn-primary disabled">Broken inf</button>
             </td>
@@ -60,7 +69,7 @@
       </div>
       <h1>
         My Cursor Themes 
-        <button class="btn btn-primary" @onClick="refreshCursorSchemes();">Refresh</button>
+        <button class="btn btn-primary" @click="refreshCursorSchemes();">Refresh</button>
         <span class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             Install new themes
@@ -82,7 +91,7 @@
               <th>Action</th>
             </thread>
             <tbody>
-              <tr v-for="cursorScheme in cursorSchemes">
+            <tr v-for="cursorScheme in Object.values(cursorSchemes)">
                 <td><label>{{cursorScheme.name}}</label></td>
                 <td><img v-bind:src="cursorScheme.normalCursorPath" height="30"/></td>
                 <td><img v-bind:src="cursorScheme.appStartingCursorPath" height="30"/></td>

@@ -12,7 +12,7 @@ const unrar = require('node-unrar-js');
 const sevenBin = require('7zip-bin');
 const { extractFull } = require('node-7z');
 const bsplit = require('buffer-split');
-const ini = require('ini');
+const ini = require('ini-win');
 const iconv = require('iconv-lite');
 
 async function extractArchive(archivePath) {
