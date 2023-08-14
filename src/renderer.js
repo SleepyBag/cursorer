@@ -211,22 +211,8 @@ async function getCursorPath(path) {
 }
 
 class CursorScheme {
-  constructor(name, paths) {
+  constructor(name) {
     this.name = name;
-    paths = paths.split(',');
-    this.paths = {};
-    for (let i = 0; i < paths.length; i++) {
-      const path = paths[i];
-      const keyName = cursorKeyNames[i];
-      this.paths[keyName] = path;
-    }
-
-    this.normalCursorPath = Vue.ref(null);
-    this.handCursorPath = Vue.ref(null);
-    this.appStartingCursorPath = Vue.ref(null);
-    this.waitCursorPath = Vue.ref(null);
-
-    this.constructCursorPaths();
   }
 
   toRegValue() {
@@ -240,11 +226,22 @@ class CursorScheme {
     return valuesToPut;
   }
 
-  async constructCursorPaths() {
-    this.normalCursorPath.value = await getCursorPath(this.paths.Arrow);
-    this.handCursorPath.value = await getCursorPath(this.paths.Hand);
-    this.appStartingCursorPath.value = await getCursorPath(this.paths.AppStarting)
-    this.waitCursorPath.value = await getCursorPath(this.paths.Wait)
+  static async from(name, paths) {
+    const scheme = new CursorScheme(name);
+    scheme.name = name;
+    paths = paths.split(',');
+    scheme.paths = {};
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      const keyName = cursorKeyNames[i];
+      scheme.paths[keyName] = path;
+    }
+
+    scheme.normalCursorPath = await getCursorPath(scheme.paths.Arrow);
+    scheme.handCursorPath = await getCursorPath(scheme.paths.Hand);
+    scheme.appStartingCursorPath = await getCursorPath(scheme.paths.AppStarting)
+    scheme.waitCursorPath = await getCursorPath(scheme.paths.Wait)
+    return scheme
   }
 }
 
@@ -294,16 +291,15 @@ async function deleteCursorScheme(cursorScheme) {
   }
 }
 
-async function listCursorSchemes() {
+const cursorSchemes = Vue.reactive([]);
+async function listCursorSchemes(cursorSchemes) {
   const schemesInReg = (await regedit.list(cursorSchemesPath))[cursorSchemesPath].values;
-  const schemes = [];
   for (const schemeName in schemesInReg) {
-    schemes.push(new CursorScheme(schemeName, schemesInReg[schemeName].value));
+    cursorSchemes.push(await CursorScheme.from(schemeName, schemesInReg[schemeName].value));
   }
-  return schemes;
 }
 
-var cursorSchemes = await listCursorSchemes();
+await listCursorSchemes(cursorSchemes);
 
 const vueApp = Vue.createApp({
   data() {
