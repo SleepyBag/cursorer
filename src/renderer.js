@@ -155,6 +155,7 @@ class InstallationItem {
         }
       }
     });
+    refreshCursorSchemes();
   }
 }
 
@@ -291,15 +292,15 @@ async function deleteCursorScheme(cursorScheme) {
   }
 }
 
-const cursorSchemes = Vue.reactive([]);
-async function listCursorSchemes(cursorSchemes) {
+const cursorSchemes = Vue.reactive({});
+async function refreshCursorSchemes() {
   const schemesInReg = (await regedit.list(cursorSchemesPath))[cursorSchemesPath].values;
   for (const schemeName in schemesInReg) {
-    cursorSchemes.push(await CursorScheme.from(schemeName, schemesInReg[schemeName].value));
+    cursorSchemes[schemeName] = await CursorScheme.from(schemeName, schemesInReg[schemeName].value);
   }
 }
 
-await listCursorSchemes(cursorSchemes);
+await refreshCursorSchemes(cursorSchemes);
 
 const vueApp = Vue.createApp({
   data() {
@@ -309,6 +310,7 @@ const vueApp = Vue.createApp({
       applyCursorScheme: applyCursorScheme,
       deleteCursorScheme: deleteCursorScheme,
       openWebsiteInNewWindow: openWebsiteInNewWindow,
+      refreshCursorSchemes: refreshCursorSchemes,
       downloadingItems: downloadingItems,
     }
   }
