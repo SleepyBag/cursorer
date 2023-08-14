@@ -14,6 +14,7 @@ const { extractFull } = require('node-7z');
 const bsplit = require('buffer-split');
 const ini = require('ini-win');
 const iconv = require('iconv-lite');
+const writeFileAtomic = require('write-file-atomic');
 
 async function extractArchive(archivePath) {
     const extractedPath = archivePath.substring(0, archivePath.lastIndexOf('.'));
@@ -37,7 +38,7 @@ async function extractArchive(archivePath) {
         console.log(`Extracted files to ${extractedPath}`);
     }
     else {
-        return false;
+        return undefined;
     }
     return extractedPath;
 }
@@ -93,6 +94,7 @@ contextBridge.exposeInMainWorld('env', { "systemroot": process.env.SystemRoot })
 contextBridge.exposeInMainWorld('rootPath', rootPath);
 contextBridge.exposeInMainWorld('extractArchive', extractArchive);
 contextBridge.exposeInMainWorld('getAllFiles', getAllFiles);
+contextBridge.exposeInMainWorld('writeFileAtomic', writeFileAtomic);
 contextBridge.exposeInMainWorld('resolveStringWithDoublePercentVariable', resolveStringWithDoublePercentVariable);
 contextBridge.exposeInMainWorld('removeQuotes', removeQuotes);
 contextBridge.exposeInMainWorld('onStartDownload', (handler) => ipcRenderer.on('start-download', (event, ...args) => handler(...args)));

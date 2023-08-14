@@ -1,32 +1,14 @@
-class DownloadItem {
-  constructor(downloadPath, completed = false) {
-    this.path = downloadPath;
-    this.filename = path.basename(this.path);
-    this.progress = 0;
-    this.completed = false;
-    this.installationItems = [];
-  }
+import { AniCacher } from './aniCache.js'
 
-  updateProgress(progress) {
-    this.progress = Math.round(progress * 100);
-  }
+const downloadItems = Vue.reactive({});
+const cursorSchemes = Vue.reactive({});
 
-  complete() {
-    this.completed = true;
-  }
-}
+const aniCacher = new AniCacher(rootPath);
 
-function splitIniValue(value) {
-  const values = value.match(/((".*?"|[^",\s]*)(,|$))/g);
-  return values.map(s => s.trim());
-}
-
-function getByPath(object, path) {
-  for (const pathSection of path.split('.')) {
-      object = object[pathSection];
-  }
-  return object
-}
+const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
+const downloadItemPath = path.join(rootPath, '.download-items');
+const cursorSchemesPath = 'HKCU\\Control Panel\\Cursors\\Schemes';
+const cursorSelectionPath = 'HKCU\\Control Panel\\Cursors';
 
 class AddRegItem {
   constructor(regPath, valueEntryName, flags, value) {
@@ -120,6 +102,7 @@ class InstallationItem {
     catch (e) {
       this.broken = true;
       this.error = e;
+      console.log(e);
     }
   }
 
@@ -174,7 +157,93 @@ class InstallationItem {
   }
 }
 
-const downloadItems = Vue.reactive({});
+class DownloadItem {
+  constructor(downloadPath, completed = false, extracted = false, extractedPath = undefined) {
+    this.path = downloadPath;
+    this.filename = path.basename(this.path);
+    this.progress = 0;
+    this.completed = completed;
+    this.extracted = extracted;
+    this.extractedPath = extractedPath;
+    this.installationItems = [];
+  }
+
+  updateProgress(progress) {
+    this.progress = Math.round(progress * 100);
+  }
+
+  async initialize() {
+    if (!this.extracted) {
+      await this.extract();
+      await persistDownloadItems();
+    }
+    await this.loadInstallationItems();
+  }
+
+  async complete() {
+    this.completed = true;
+    await persistDownloadItems();
+    await this.extract();
+    await persistDownloadItems();
+    await this.loadInstallationItems();
+  }
+
+  async extract() {
+    this.extractedPath = await extractArchive(this.path);
+    this.extracted = true;
+  }
+
+  async loadInstallationItems() {
+    if (this.extractedPath !== undefined) {
+      const filenames = await getAllFiles(this.extractedPath);
+      const infs = filenames.filter(filename => filename.endsWith(".inf"));
+      console.log(infs);
+      for (const inf of infs) {
+        const installationItem = await InstallationItem.from(inf);
+        this.installationItems.push(installationItem);
+        console.log(installationItem);
+      }
+    }
+  }
+}
+
+async function persistDownloadItems() {
+  const valueToPersist = Object.values(downloadItems)
+    .filter(di => di.completed)       // just drop incompleted items
+    .map(di => {
+      return {
+        path: di.path,
+        extracted: di.extracted,
+        extractedPath: di.extractedPath
+      }
+    });
+  const valueJson = JSON.stringify(valueToPersist);
+  await writeFileAtomic(downloadItemPath, valueJson);
+}
+
+async function loadDownloadItems() {
+  const valueJson = await fs.readFile(downloadItemPath, { encoding: 'utf8' });
+  const persistedValues = JSON.parse(valueJson);
+  for (const v of persistedValues) {
+    downloadItems[v.path] = new DownloadItem(v.path, true, v.extracted, v.extractedPath);
+  }
+  for (const downloadItem of Object.values(downloadItems)) {
+    await downloadItem.initialize();
+  }
+}
+
+function splitIniValue(value) {
+  const values = value.match(/((".*?"|[^",\s]*)(,|$))/g);
+  return values.map(s => s.trim());
+}
+
+function getByPath(object, path) {
+  for (const pathSection of path.split('.')) {
+      object = object[pathSection];
+  }
+  return object
+}
+
 onStartDownload((downloadPath) => {
   downloadItems[downloadPath] = new DownloadItem(downloadPath);
 });
@@ -185,24 +254,11 @@ onUpdateDownload((downloadPath, progress) => {
 onFinishDownload(async (downloadPath, state) => {
   if (state === 'completed') {
     console.log(`Download successfully to ${downloadPath}`);
-    const extractedPath = await extractArchive(downloadPath);
-    const filenames = await getAllFiles(extractedPath);
-    const infs = filenames.filter(filename => filename.endsWith(".inf"));
-    const downloadItem = downloadItems[downloadPath];
-    downloadItem.complete();
-    for (const inf of infs) {
-      downloadItem.installationItems.push(await InstallationItem.from(inf));
-    }
+    downloadItems[downloadPath].complete();
   } else {
     console.log(`Download failed: ${state}`)
   }
 });
-
-import { AniCacher } from './aniCache.js'
-
-const aniCacher = new AniCacher(rootPath);
-
-const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
 
 class Link {
   constructor(name, url) {
@@ -273,9 +329,6 @@ function openWebsiteInNewWindow(url) {
   const newWindow = window.open(url, '', 'height=768,width=1024');
 }
 
-const cursorSchemesPath = 'HKCU\\Control Panel\\Cursors\\Schemes';
-const cursorSelectionPath = 'HKCU\\Control Panel\\Cursors';
-
 async function applyCursorScheme(cursorScheme) {
   console.log(`Setting cursor scheme to "${cursorScheme.name}"`);
   const valuesToPut = cursorScheme.toRegValue();
@@ -307,7 +360,6 @@ async function deleteCursorScheme(cursorScheme) {
   }
 }
 
-const cursorSchemes = Vue.reactive({});
 async function refreshCursorSchemes() {
   const schemesInReg = (await regedit.list(cursorSchemesPath))[cursorSchemesPath].values;
   for (const schemeName in schemesInReg) {
@@ -316,9 +368,11 @@ async function refreshCursorSchemes() {
 }
 
 await refreshCursorSchemes(cursorSchemes);
+await loadDownloadItems();
 
 async function deleteDownloadItem(downloadItem) {
   delete downloadItems[downloadItem.path];
+  persistDownloadItems();
 }
 
 const vueApp = Vue.createApp({
