@@ -8,13 +8,16 @@
   </head>
   <body>
     <script src="../node_modules/vue/dist/vue.global.js"></script>
-    <div id="app">
+    <div id="app" class="card card-body">
       <div v-if="downloadingItems.length > 0">
         <h1>Downloading</h1>
         <table class="table table-hover">
           <tr v-for="downloadingItem in downloadingItems">
             <td style="max-width: 100px; width: 100px;">
               {{downloadingItem.filename}}
+              <button class="btn btn-primary" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="`#download-collapse-${downloadingItem.filename}`" aria-expanded="true" v-bind:aria-controls="`download-collapse-${downloadingItem.filename}`">
+                Show installation
+              </button>
               <span class="progress">
                 <span class="progress-bar progress-bar-striped progress-bar-animated" 
                       role="progressbar" 
@@ -24,14 +27,11 @@
                       v-bind:style="`width: ${downloadingItem.progress}%`">
                 </span>
               </span>
-            </td>
-          </tr>
-        </table>
-      </div>
-      <div v-if="installationItems.length > 0">
-        <h1>Downloaded</h1>
+              <div class="collapse" v-bind:id="`download-collapse-${downloadingItem.filename}`">
+                <div class="card card-body">
+                  <div v-if="downloadingItem.installationItems.length > 0">
         <table class="table table-hover">
-          <tr v-for="installationItem in installationItems">
+                      <tr v-for="installationItem in downloadingItem.installationItems">
             <td>
               {{installationItem.name}}
             </td>
@@ -44,6 +44,12 @@
             </td>
             <td>
               <label v-if="installationItem.broken">{{installationItem.error}}</label>
+            </td>
+          </tr>
+        </table>
+      </div>
+                </div>
+              </div>
             </td>
           </tr>
         </table>

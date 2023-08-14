@@ -3,6 +3,7 @@ class DownloadingItem {
     this.path = downloadPath;
     this.filename = path.basename(this.path);
     this.progress = 0;
+    this.installationItems = [];
   }
 
   updateProgress(progress) {
@@ -151,7 +152,6 @@ class InstallationItem {
 }
 
 const downloadingItems = Vue.reactive([]);
-const installationItems = Vue.reactive([]);
 onStartDownload((downloadPath) => {
   downloadingItems.push(new DownloadingItem(downloadPath));
 });
@@ -166,8 +166,9 @@ onFinishDownload(async (downloadPath, state) => {
     const extractedPath = await extractArchive(downloadPath);
     const filenames = await getAllFiles(extractedPath);
     const infs = filenames.filter(filename => filename.endsWith(".inf"));
+    const downloadingItem = downloadingItems.find(item => item.path === downloadPath);
     for (const inf of infs) {
-      installationItems.push(await InstallationItem.from(inf));
+      downloadingItem.installationItems.push(await InstallationItem.from(inf));
     }
   } else {
     console.log(`Download failed: ${state}`)
@@ -306,7 +307,6 @@ const vueApp = Vue.createApp({
       deleteCursorScheme: deleteCursorScheme,
       openWebsiteInNewWindow: openWebsiteInNewWindow,
       downloadingItems: downloadingItems,
-      installationItems: installationItems,
     }
   }
 })
