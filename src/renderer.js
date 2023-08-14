@@ -127,6 +127,13 @@ class InstallationItem {
     }
     infItem.Strings['10'] = env.systemroot;
     const item = new InstallationItem(infPath, infItem);
+
+    // match cursor paths to generate preview
+    const targetCursorPaths = item.addRegItem.value.split(',');
+    item.normalCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Arrow")]).source);
+    item.handCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Hand")]).source);
+    item.appStartingCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("AppStarting")]).source);
+    item.waitCursorPath = await getCursorPath(item.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Wait")]).source);
     return item;
   }
 
@@ -194,6 +201,15 @@ const links = [
   new Link("VS Themes", "https://vsthemes.org/en/cursors/"),
 ];
 
+async function getCursorPath(path) {
+  path = resolveStringWithDoublePercentVariable(path);
+  if (path.endsWith('.cur')) {
+    return path;
+  } if (path.endsWith('.ani')) {
+    return await aniCacher.getIconPathOfAni(path);
+  }
+}
+
 class CursorScheme {
   constructor(name, paths) {
     this.name = name;
@@ -224,20 +240,11 @@ class CursorScheme {
     return valuesToPut;
   }
 
-  async constructCursorPath(path) {
-    path = resolveStringWithDoublePercentVariable(path);
-    if (path.endsWith('.cur')) {
-      return path;
-    } if (path.endsWith('.ani')) {
-      return await aniCacher.getIconPathOfAni(path);
-    }
-  }
-
   async constructCursorPaths() {
-    this.normalCursorPath.value = await this.constructCursorPath(this.paths.Arrow);
-    this.handCursorPath.value = await this.constructCursorPath(this.paths.Hand);
-    this.appStartingCursorPath.value = await this.constructCursorPath(this.paths.AppStarting)
-    this.waitCursorPath.value = await this.constructCursorPath(this.paths.Wait)
+    this.normalCursorPath.value = await getCursorPath(this.paths.Arrow);
+    this.handCursorPath.value = await getCursorPath(this.paths.Hand);
+    this.appStartingCursorPath.value = await getCursorPath(this.paths.AppStarting)
+    this.waitCursorPath.value = await getCursorPath(this.paths.Wait)
   }
 }
 

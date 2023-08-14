@@ -35,6 +35,10 @@
             <td>
               {{installationItem.name}}
             </td>
+                        <td><img v-bind:src="installationItem.normalCursorPath" height="30"/></td>
+                        <td><img v-bind:src="installationItem.appStartingCursorPath" height="30"/></td>
+                        <td><img v-bind:src="installationItem.waitCursorPath" height="30"/></td>
+                        <td><img v-bind:src="installationItem.handCursorPath" height="30"/></td>
             <td>
               <button v-if="!installationItem.broken"
                       class="btn btn-primary"
