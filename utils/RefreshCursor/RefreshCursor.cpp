@@ -3,10 +3,18 @@
 
 #include <windows.h>
 #include <iostream>
+#include <string>
 
-int main()
+int main(int argc, char** argv)
 {
-    SystemParametersInfo(SPI_SETCURSORS, 0, 0, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+    if (argc == 1) {
+        SystemParametersInfo(SPI_SETCURSORS, 0, 0, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+    }
+    else if (argv[1] == std::string("setSize")) {
+        int size;
+        sscanf_s(argv[2], "%d", &size);
+		SystemParametersInfo(0x2029, 0, (PVOID)size, 0x01);
+    }
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
