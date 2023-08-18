@@ -375,6 +375,17 @@ async function deleteDownloadItem(downloadItem) {
   persistDownloadItems();
 }
 
+var cursorSize = Vue.ref(30);
+
+async function setCursorSize(newCursorSize) {
+  exec(`.\\utils\\RefreshCursor.exe setSize ${newCursorSize}`, {encoding: "utf8"}, (error, stdout, stderr) => {
+    console.log("RefreshCursor finished");
+    console.log(`Error: ${error}`);
+    console.log(`Stdout: ${stdout}`);
+    console.log(`Stderr: ${stderr}`);
+  });
+}
+
 const vueApp = Vue.createApp({
   data() {
     return {
@@ -386,6 +397,8 @@ const vueApp = Vue.createApp({
       refreshCursorSchemes: refreshCursorSchemes,
       deleteDownloadItem: deleteDownloadItem,
       downloadItems: downloadItems,
+      cursorSize: cursorSize,
+      setCursorSize: setCursorSize,
     }
   }
 })

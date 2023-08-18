@@ -68,7 +68,7 @@
         </table>
       </div>
       <h1>
-        My Cursor Themes 
+        Cursor Settings
         <button class="btn btn-primary" @click="refreshCursorSchemes();">Refresh</button>
         <span class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -79,8 +79,10 @@
           </ul>
         </span>
       </h1>
-      <div>
-        <ul class="list-group" id="cursorSchemeList">
+      <label for="cursor-size" class="form-label">Cursor Size</label>
+      <input type="range" class="form-range" min="10" max="100" step="1" id="cursor-size" 
+             v-bind:value="cursorSize" 
+             @change="event => setCursorSize(event.target.value)">
           <table class="table table-hover">
             <thread class="thread-dark">
               <th>Name</th>
