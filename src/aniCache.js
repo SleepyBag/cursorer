@@ -58,4 +58,13 @@ export class AniCacher {
         }
         return icoPath;
     }
+
+    async initializeCursorPath(path) {
+        path = resolveStringWithDoublePercentVariable(path);
+        if (path.endsWith('.cur')) {
+            this[path] = path;
+        } if (path.endsWith('.ani')) {
+            this[path] = await this.getIconPathOfAni(path);
+        }
+    }
 }
