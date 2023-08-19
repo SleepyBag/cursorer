@@ -375,16 +375,20 @@ async function deleteDownloadItem(downloadItem) {
   persistDownloadItems();
 }
 
-var cursorSize = Vue.ref(30);
+async function getCursorSize() {
+  return (await regedit.list(cursorSelectionPath))[cursorSelectionPath].values.CursorBaseSize.value;
+}
 
 async function setCursorSize(newCursorSize) {
   exec(`.\\utils\\RefreshCursor.exe setSize ${newCursorSize}`, {encoding: "utf8"}, (error, stdout, stderr) => {
-    console.log("RefreshCursor finished");
+    console.log("Set cursor size finished");
     console.log(`Error: ${error}`);
     console.log(`Stdout: ${stdout}`);
     console.log(`Stderr: ${stderr}`);
   });
 }
+
+var cursorSize = await getCursorSize();
 
 const vueApp = Vue.createApp({
   data() {
