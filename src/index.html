@@ -9,136 +9,150 @@
   <body>
     <script src="../node_modules/vue/dist/vue.global.js"></script>
     <div id="app" class="card card-body">
-      <div v-if="Object.keys(downloadItems).length > 0">
-        <h1>Download Items</h1>
-        <table class="table table-hover">
-          <tbody>
-          <template v-for="downloadItem in Object.values(downloadItems)">
-            <tr>
-              <td>
-                {{downloadItem.filename}}
-              </td>
-              <td>
-                <button class="btn btn-primary" 
-                        type="button" 
-                        data-bs-toggle="collapse" 
-                        v-bind:data-bs-target="`#download-collapse-${downloadItem.filename}`" 
-                        aria-expanded="true" 
-                        v-bind:aria-controls="`download-collapse-${downloadItem.filename}`"
-                        v-if="downloadItem.completed">
-                  Show installation
-                </button>
-                <button class="btn btn-danger" @click="deleteDownloadItem(downloadItem)">Delete</button>
-              </td>
-            </tr>
-              <tr v-if="!downloadItem.completed">
-                <td colspan="100%">
-                  <span class="progress">
-                    <span class="progress-bar progress-bar-striped progress-bar-animated" 
-                          role="progressbar" 
-                          v-bind:aria-valuenow="downloadItem.progress" 
-                          aria-valuemin="0" 
-                          aria-valuemax="100" 
-                          v-bind:style="`width: ${downloadItem.progress}%`">
-                    </span>
-                  </span>
-                </td>
-              </tr>
-              <tr v-if="downloadItem.installationItems.length > 0" 
-                  class="collapse" 
-                  v-bind:id="`download-collapse-${downloadItem.filename}`">
-                <td colspan="100%">
-                  <div class="card card-body">
-                    <table class="table table-hover">
-                      <tr v-for="installationItem in downloadItem.installationItems">
-                        <td>
-                          {{installationItem.name}}
-                        </td>
-                        <td><img v-bind:src="installationItem.normalCursorPath" height="30"/></td>
-                        <td><img v-bind:src="installationItem.appStartingCursorPath" height="30"/></td>
-                        <td><img v-bind:src="installationItem.waitCursorPath" height="30"/></td>
-                        <td><img v-bind:src="installationItem.handCursorPath" height="30"/></td>
-                        <td>
-                          <button v-if="!installationItem.broken && !installationItem.installed"
-                                  class="btn btn-primary"
-                                  @click="installationItem.install()">Install</button>
-                          <button v-if="!installationItem.broken && installationItem.installed"
-                                  class="btn btn-primary disabled">Installed</button>
-                          <button v-if="installationItem.broken"
-                                  class="btn btn-primary disabled">Broken inf</button>
-                        </td>
-                        <td>
-                          <label v-if="installationItem.broken">{{installationItem.error}}</label>
-                        </td>
-                      </tr>
-                    </table>
-                  </div>
-                </td>
-              </tr>
-          </template>
-          </tbody>
-        </table>
-      </div>
-      <h1>
-        Cursor Settings
-        <button class="btn btn-primary" @click="refreshCursorSchemes();">Refresh</button>
-        <span class="dropdown">
-          <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Install new themes
-          </button>
+      <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="pills-settings-tab" data-bs-toggle="pill" data-bs-target="#pills-settings" type="button" role="tab" aria-controls="pills-settings" aria-selected="true">Cursor Settings</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="pills-downloads-tab" data-bs-toggle="pill" data-bs-target="#pills-downloads" type="button" role="tab" aria-controls="pills-downloads" aria-selected="false">Downloads</button>
+        </li>
+        <li class="nav-item dropdown" role="presentation">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Install Cursor...</a>
           <ul class="dropdown-menu">
-            <li v-for="link in links"><a class="dropdown-item" @click="openWebsiteInNewWindow(link.url)">{{link.name}}</a></li>
+            <li v-for="link in links">
+              <a class="dropdown-item" @click="openWebsiteInNewWindow(link.url)">{{link.name}}</a>
+            </li>
           </ul>
-        </span>
-      </h1>
-      <div class="row">
-        <div class="col-md-auto">
-          <label for="cursor-size" class="form-label">Cursor Size</label>
+        </li>
+      </ul>
+      <div class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">...</div>
+        <div class="tab-pane fade" id="pills-downloads" role="tabpanel" aria-labelledby="pills-downloads-tab">
+        <!-- <div v-if="Object.keys(downloadItems).length > 0"> -->
+          <h1>Download Items</h1>
+          <table class="table table-hover">
+            <tbody>
+            <template v-for="downloadItem in Object.values(downloadItems)">
+              <tr>
+                <td>
+                  {{downloadItem.filename}}
+                </td>
+                <td>
+                  <button class="btn btn-primary" 
+                          type="button" 
+                          data-bs-toggle="collapse" 
+                          v-bind:data-bs-target="`#download-collapse-${downloadItem.filename}`" 
+                          aria-expanded="true" 
+                          v-bind:aria-controls="`download-collapse-${downloadItem.filename}`"
+                          v-if="downloadItem.completed">
+                    Show installation
+                  </button>
+                  <button class="btn btn-danger" @click="deleteDownloadItem(downloadItem)">Delete</button>
+                </td>
+              </tr>
+                <tr v-if="!downloadItem.completed">
+                  <td colspan="100%">
+                    <span class="progress">
+                      <span class="progress-bar progress-bar-striped progress-bar-animated" 
+                            role="progressbar" 
+                            v-bind:aria-valuenow="downloadItem.progress" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100" 
+                            v-bind:style="`width: ${downloadItem.progress}%`">
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+                <tr v-if="downloadItem.installationItems.length > 0" 
+                    class="collapse" 
+                    v-bind:id="`download-collapse-${downloadItem.filename}`">
+                  <td colspan="100%">
+                    <div class="card card-body">
+                      <table class="table table-hover">
+                        <tr v-for="installationItem in downloadItem.installationItems">
+                          <td>
+                            {{installationItem.name}}
+                          </td>
+                          <td><img v-bind:src="installationItem.normalCursorPath" height="30"/></td>
+                          <td><img v-bind:src="installationItem.appStartingCursorPath" height="30"/></td>
+                          <td><img v-bind:src="installationItem.waitCursorPath" height="30"/></td>
+                          <td><img v-bind:src="installationItem.handCursorPath" height="30"/></td>
+                          <td>
+                            <button v-if="!installationItem.broken && !installationItem.installed"
+                                    class="btn btn-primary"
+                                    @click="installationItem.install()">Install</button>
+                            <button v-if="!installationItem.broken && installationItem.installed"
+                                    class="btn btn-primary disabled">Installed</button>
+                            <button v-if="installationItem.broken"
+                                    class="btn btn-primary disabled">Broken inf</button>
+                          </td>
+                          <td>
+                            <label v-if="installationItem.broken">{{installationItem.error}}</label>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+            </template>
+            </tbody>
+          </table>
         </div>
-        <div class="col">
-          <input type="range" class="form-range" min="10" max="100" step="1" id="cursor-size" 
-                v-bind:value="cursorSize" 
-                @change="event => setCursorSize(event.target.value)">
+        <div class="tab-pane fade show active" id="pills-settings" role="tabpanel" aria-labelledby="pills-settings-tab">
+          <h1>
+            Cursor Settings
+            <button class="btn btn-primary" @click="refreshCursorSchemes();">Refresh</button>
+          </h1>
+          <div class="row">
+            <div class="col-md-auto">
+              <label for="cursor-size" class="form-label">Cursor Size</label>
+            </div>
+            <div class="col">
+              <input type="range" class="form-range" min="10" max="100" step="1" id="cursor-size" 
+                    v-bind:value="cursorSize" 
+                    @change="event => setCursorSize(event.target.value)">
+            </div>
+          </div>
+            <table class="table table-hover">
+              <thread class="thread-dark">
+                <th>Name</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Action</th>
+                <th>
+                  <label>Random cursor</label>
+                  <select class="form-select" aria-label="Default select example">
+                    <option selected>Never</option>
+                    <option value="1">Per hour</option>
+                    <option value="2">Per day</option>
+                    <option value="3">Per week</option>
+                  </select>
+                </th>
+              </thread>
+              <tbody>
+                <tr v-for="cursorScheme in cursorSchemes">
+                  <td><label>{{cursorScheme.name}}</label></td>
+                  <td><img v-bind:src="cursorScheme.normalCursorPath" height="30"/></td>
+                  <td><img v-bind:src="cursorScheme.appStartingCursorPath" height="30"/></td>
+                  <td><img v-bind:src="cursorScheme.waitCursorPath" height="30"/></td>
+                  <td><img v-bind:src="cursorScheme.handCursorPath" height="30"/></td>
+                  <td>
+                    <button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button>
+                    <button class="btn btn-danger" @click="deleteCursorScheme(cursorScheme)">Delete</button>
+                  </td>
+                  <td>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
         </div>
       </div>
-        <table class="table table-hover">
-          <thread class="thread-dark">
-            <th>Name</th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th>Action</th>
-            <th>
-              <label>Random cursor</label>
-              <select class="form-select" aria-label="Default select example">
-                <option selected>Never</option>
-                <option value="1">Per hour</option>
-                <option value="2">Per day</option>
-                <option value="3">Per week</option>
-              </select>
-            </th>
-          </thread>
-          <tbody>
-            <tr v-for="cursorScheme in cursorSchemes">
-              <td><label>{{cursorScheme.name}}</label></td>
-              <td><img v-bind:src="cursorScheme.normalCursorPath" height="30"/></td>
-              <td><img v-bind:src="cursorScheme.appStartingCursorPath" height="30"/></td>
-              <td><img v-bind:src="cursorScheme.waitCursorPath" height="30"/></td>
-              <td><img v-bind:src="cursorScheme.handCursorPath" height="30"/></td>
-              <td>
-                <button class="btn btn-primary" @click="applyCursorScheme(cursorScheme)">Apply</button>
-                <button class="btn btn-danger" @click="deleteCursorScheme(cursorScheme)">Delete</button>
-              </td>
-              <td>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    </div>
     <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   </body>
   <script type="module" src="./renderer.js"></script>
