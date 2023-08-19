@@ -271,6 +271,7 @@ const links = [
   new Link("Zhutix", "https://zhutix.com/tag/cursors/"),
   new Link("Deviant Art", "https://www.deviantart.com/tag/cursors"),
   new Link("VS Themes", "https://vsthemes.org/en/cursors/"),
+  new Link("Pling", "https://www.pling.com/browse?cat=107"),
 ];
 
 async function getCursorPath(path) {
