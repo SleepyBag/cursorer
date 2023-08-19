@@ -76,10 +76,10 @@
                           <td><img v-bind:src="aniCacher[installationItem.waitCursorPath]" height="30"/></td>
                           <td><img v-bind:src="aniCacher[installationItem.handCursorPath]" height="30"/></td>
                           <td>
-                            <button v-if="!installationItem.broken && !cursorSchemes.isInstalled(installationItem)"
+                            <button v-if="!installationItem.broken && !cursorSchemes.isInstalled(installationItem.name)"
                                     class="btn btn-primary"
                                     @click="installationItem.install(); refresh()">Install</button>
-                            <button v-if="!installationItem.broken && cursorSchemes.isInstalled(installationItem)"
+                            <button v-if="!installationItem.broken && cursorSchemes.isInstalled(installationItem.name)"
                                     class="btn btn-primary disabled">Installed</button>
                             <button v-if="installationItem.broken"
                                     class="btn btn-primary disabled">Broken inf</button>

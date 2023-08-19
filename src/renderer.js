@@ -90,6 +90,7 @@ const vueApp = Vue.createApp({
       openWebsiteInNewWindow: openWebsiteInNewWindow,
       cursorSize: cursorSize,
       setCursorSize: setCursorSize,
+      refresh: refresh,
     }
   }
 })
