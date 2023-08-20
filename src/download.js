@@ -1,5 +1,6 @@
 const downloadItemPath = path.join(rootPath, '.download-items');
 const cursorSchemesPath = 'HKCU\\Control Panel\\Cursors\\Schemes';
+const cursorSelectionPath = 'HKCU\\Control Panel\\Cursors';
 const cursorKeyNames = ["Arrow", "Help", "AppStarting", "Wait", "Crosshair", "IBeam", "NWPen", "No", "SizeNS", "SizeWE", "SizeNWSE", "SizeNESW", "SizeAll", "UpArrow", "Hand", "Person", "Pin"];
 
 function splitIniValue(value) {
@@ -25,15 +26,15 @@ export class AddRegItem {
     static fromIniString(raw, stringMap) {
         var [regRoot, subkey, valueEntryName, flags, value] = splitIniValue(raw);
         regRoot = resolveStringWithDoublePercentVariable(
-            regRoot.substring(0, regRoot.length - 1), stringMap);
+            regRoot.substring(0, regRoot.length - 1), { stringMap: stringMap });
         subkey = resolveStringWithDoublePercentVariable(
-            subkey.substring(0, subkey.length - 1), stringMap);
+            subkey.substring(0, subkey.length - 1), { stringMap: stringMap });
         valueEntryName = resolveStringWithDoublePercentVariable(
-            valueEntryName.substring(0, valueEntryName.length - 1), stringMap);
+            valueEntryName.substring(0, valueEntryName.length - 1), { stringMap: stringMap });
         flags = resolveStringWithDoublePercentVariable(
-            flags.substring(0, flags.length - 1), stringMap);
+            flags.substring(0, flags.length - 1), { stringMap: stringMap });
         value = resolveStringWithDoublePercentVariable(
-            value, stringMap);
+            value, { stringMap: stringMap });
         return new AddRegItem(regRoot + '\\' + subkey, valueEntryName, flags, value);
     }
 }
@@ -70,9 +71,7 @@ export class InstallationItem {
                 // For some cursor packs, the scheme definition is actually broken. 
                 // The correct behavior of them relies on the cursor selection registry values.
                 const cursorRegItems = addRegItems.filter(addRegItem => addRegItem.regPath === cursorSelectionPath);
-                console.log(cursorRegItems);
                 const schemeName = cursorRegItems.find(addRegItem => addRegItem.valueEntryName === "").value;
-                console.log(schemeName);
                 const cursorPaths = [];
                 for (const cursorKeyName of cursorKeyNames) {
                     const cursorRegValue = cursorRegItems.find(addRegItem => addRegItem.valueEntryName === cursorKeyName);
@@ -95,7 +94,7 @@ export class InstallationItem {
             for (const copyFileSectionName of infItem.DefaultInstall.CopyFiles.split(',')) {
                 if (infItem.DestinationDirs[copyFileSectionName] !== undefined) {
                     const destination = path.join(env.systemroot, resolveStringWithDoublePercentVariable(
-                        splitIniValue(infItem.DestinationDirs[copyFileSectionName])[1], stringMap));
+                        splitIniValue(infItem.DestinationDirs[copyFileSectionName])[1], { stringMap: stringMap }));
                     for (const sourceFile in getByPath(infItem, copyFileSectionName)) {
                         this.copyFiles.push({ source: path.join(sourceDir, sourceFile), target: path.join(destination, sourceFile) });
                     }
@@ -110,7 +109,9 @@ export class InstallationItem {
     }
 
     setToBeInstalled() {
-        this.state = 'to-be-installed';
+        if (this.state !== 'broken') {
+            this.state = 'to-be-installed';
+        }
     }
 
     setInstalled() {
@@ -128,10 +129,17 @@ export class InstallationItem {
     async initialize() {
         // match cursor paths to generate preview
         const targetCursorPaths = this.addRegItem.value.split(',');
-        this.normalCursorPath = this.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Arrow")]).source;
-        this.handCursorPath = this.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Hand")]).source;
-        this.appStartingCursorPath = this.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("AppStarting")]).source;
-        this.waitCursorPath = this.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf("Wait")]).source;
+        const getCursorFilePath = name => {
+            try {
+                return this.copyFiles.find(copyFile => copyFile.target === targetCursorPaths[cursorKeyNames.indexOf(name)]).source;
+            } catch {
+                return "";
+            }
+        }
+        this.normalCursorPath = getCursorFilePath("Arrow");
+        this.handCursorPath = getCursorFilePath("Hand");
+        this.appStartingCursorPath = getCursorFilePath("AppStarting");
+        this.waitCursorPath = getCursorFilePath("Wait");
     }
 
     async install() {
@@ -164,9 +172,11 @@ export class InstallationItem {
 }
 
 export class DownloadItem {
-    constructor(downloadPath, completed = false, extracted = false, extractedPath = undefined) {
+    constructor(downloadPath, { completed = false, extracted = false, extractedPath = undefined, isNew = false } = {}) {
         this.path = downloadPath;
         this.filename = path.basename(this.path);
+        this.hash = stringHash(this.filename);
+        this.isNew = isNew;
         this.progress = 0;
         this.completed = completed;
         this.extracted = extracted;
@@ -200,15 +210,19 @@ export class DownloadItem {
         if (this.extractedPath !== undefined) {
             const filenames = await getAllFiles(this.extractedPath);
             const infs = filenames.filter(filename => filename.endsWith(".inf"));
-            console.log(infs);
             for (const infPath of infs) {
                 const infItem = ini.parse(decode(await fs.readFile(infPath), 'gbk'));
-                console.log(infItem);
                 if (infItem.Strings === undefined) {
                     infItem.Strings = {};
                 }
                 for (const stringName in infItem.Strings) {
-                    infItem.Strings[stringName] = removeQuotes(infItem.Strings[stringName]);
+                    const stringValue = infItem.Strings[stringName];
+                    if (stringValue === '') {
+                        infItem.Strings[stringName] = stringName;                     // work-around for mal-formatted inf
+                    }
+                    else {
+                        infItem.Strings[stringName] = removeQuotes(stringValue);
+                    }
                 }
                 infItem.Strings['10'] = env.systemroot;
                 const item = new InstallationItem(infPath, infItem);
@@ -222,10 +236,12 @@ export class DownloadItem {
 export class DownloadList {
     constructor() {
         this.downloadItems = {};
+        this.newCount = 0;
     }
 
     add(downloadPath) {
-        this.downloadItems[downloadPath] = new DownloadItem(downloadPath);
+        this.downloadItems[downloadPath] = new DownloadItem(downloadPath, { isNew : true });
+        this.newCount++;
     }
 
     updateProgress(downloadPath, progress) {
@@ -255,7 +271,7 @@ export class DownloadList {
         const valueJson = await fs.readFile(downloadItemPath, { encoding: 'utf8' });
         const persistedValues = JSON.parse(valueJson);
         for (const v of persistedValues) {
-            this.downloadItems[v.path] = new DownloadItem(v.path, true, v.extracted, v.extractedPath);
+            this.downloadItems[v.path] = new DownloadItem(v.path, { completed: true, extracted: v.extracted, extractedPath: v.extractedPath });
         }
         for (const downloadItem of Object.values(this.downloadItems)) {
             await downloadItem.initialize();
@@ -268,6 +284,13 @@ export class DownloadList {
     }
 
     [Symbol.iterator]() {
-        return Object.values(this.downloadItems).values();
+        return Object.values(this.downloadItems).toSorted((a, b) => {
+            if (a.isNew !== b.isNew) {
+                return b.isNew - a.isNew;
+            }
+            else {
+                return a.filename.localeCompare(b.filename);
+            }
+        }).values();
     }
 }

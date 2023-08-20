@@ -3,8 +3,10 @@ const cursorSelectionPath = 'HKCU\\Control Panel\\Cursors';
 const cursorSchemesPath = 'HKCU\\Control Panel\\Cursors\\Schemes';
 
 class CursorScheme {
-    constructor(name, paths) {
+    constructor(name, paths, isNew) {
         this.name = name;
+        this.isNew = isNew;
+        this.newCount = 0;
         this.setToBeApplied();
 
         paths = paths.split(',');
@@ -48,6 +50,7 @@ class CursorScheme {
 export class CursorSchemeList {
     constructor() {
         this.cursorSchemes = {};
+        this.initialized = false;
     }
 
     isInstalled(cursorSchemeName) {
@@ -109,13 +112,22 @@ export class CursorSchemeList {
             }
         }
         for (const schemeName in schemesInReg) {
-            this.cursorSchemes[schemeName] = new CursorScheme(schemeName, schemesInReg[schemeName].value);
+            const cursorScheme = this.cursorSchemes[schemeName];
+            const isNew = (cursorScheme === undefined || cursorScheme.isNew) && this.initialized;
+            this.cursorSchemes[schemeName] = new CursorScheme(schemeName, schemesInReg[schemeName].value, isNew);
         }
+        this.newCount = Object.values(this.cursorSchemes).reduce((a, b) => a + b.isNew, 0);
+        this.initialized = true;
     }
 
     [Symbol.iterator]() {
         return Object.values(this.cursorSchemes)
-                     .toSorted((a, b) => a.name.localeCompare(b.name))
+                     .toSorted((a, b) => { 
+                        if (a.isNew !== b.isNew) {
+                            return b.isNew - a.isNew;
+                        }
+                        return a.name.localeCompare(b.name);
+                     })
                      .values();
     }
 }

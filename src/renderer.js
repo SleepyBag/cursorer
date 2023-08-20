@@ -21,6 +21,7 @@ onFinishDownload(async (downloadPath, state) => {
   if (state === 'completed') {
     console.log(`Download successfully to ${downloadPath}`);
     await downloadItems.complete(downloadPath);
+    await refresh();
   } else {
     console.log(`Download failed: ${state}`)
   }
@@ -58,8 +59,18 @@ async function loadIcons() {
       await aniCacher.initializeCursorPath(installationItem.handCursorPath);
       await aniCacher.initializeCursorPath(installationItem.appStartingCursorPath);
       await aniCacher.initializeCursorPath(installationItem.waitCursorPath);
+    }
+  }
+}
+
+function loadInstalled() {
+  for (const downloadItem of downloadItems) {
+    for (const installationItem of downloadItem.installationItems) {
       if (cursorSchemes.isInstalled(installationItem.name)) {
         installationItem.setInstalled();
+      }
+      else {
+        installationItem.setToBeInstalled();
       }
     }
   }
@@ -68,6 +79,7 @@ async function loadIcons() {
 async function refresh() {
   await cursorSchemes.refresh();
   await loadIcons();
+  loadInstalled();
 }
 
 async function install(installationItem) {

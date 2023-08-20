@@ -66,18 +66,23 @@ function removeQuotes(string) {
     return string;
 }
 
-function resolveStringWithDoublePercentVariable(raw, stringMap = process.env) {
+function resolveStringWithDoublePercentVariable(raw, { stringMap = process.env, useLiteralForUnresolvable = false, ignoreCase = true } = {}) {
     raw = removeQuotes(raw);
     while (raw.includes('%') && raw.indexOf('%') != raw.lastIndexOf('%')) {
         const resolved = raw.replace(/%[^%]*%/, variable => {
-            variable = variable.toLowerCase();                            // Windows just ignores case
-            value = stringMap[variable.substring(1, variable.length - 1)];
-            return value === undefined ? variable : value;
+            const unquotedVariable = variable.substring(1, variable.length - 1);
+            const variableKey = ignoreCase ? unquotedVariable.toLowerCase() : unquotedVariable;
+            const value = stringMap[variableKey];
+            if (value !== undefined) {
+                return value;
+            }
+            else if (useLiteralForUnresolvable) {
+                return unquotedVariable;
+            }
+            else {
+                throw new Error(`Unresolved variable ${variable} in ${raw}`);
+            }
         });
-        // there is a variable unresolved
-        if (raw === resolved) {
-            throw new Error(`Unresolved variable in ${raw}`);
-        }
         raw = resolved;
     }
     return raw;

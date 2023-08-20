@@ -11,10 +11,16 @@
     <div id="app" class="card card-body">
       <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
         <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="pills-settings-tab" data-bs-toggle="pill" data-bs-target="#pills-settings" type="button" role="tab" aria-controls="pills-settings" aria-selected="true">Cursor Settings</button>
+          <button class="nav-link active" id="pills-settings-tab" data-bs-toggle="pill" data-bs-target="#pills-settings" type="button" role="tab" aria-controls="pills-settings" aria-selected="true">
+            Cursor Settings
+            <span class="badge bg-secondary" v-if="cursorSchemes.newCount > 0">{{cursorSchemes.newCount}}</span>
+          </button>
         </li>
         <li class="nav-item" role="presentation">
-          <button class="nav-link" id="pills-downloads-tab" data-bs-toggle="pill" data-bs-target="#pills-downloads" type="button" role="tab" aria-controls="pills-downloads" aria-selected="false">Downloads</button>
+          <button class="nav-link" id="pills-downloads-tab" data-bs-toggle="pill" data-bs-target="#pills-downloads" type="button" role="tab" aria-controls="pills-downloads" aria-selected="false">
+            Downloads
+            <span class="badge bg-secondary" v-if="downloadItems.newCount > 0">{{downloadItems.newCount}}</span>
+          </button>
         </li>
         <li class="nav-item dropdown" role="presentation">
           <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Install Cursor...</a>
@@ -33,18 +39,30 @@
             <template v-for="downloadItem in downloadItems">
               <tr>
                 <td>
+                  <span class="badge bg-primary" v-if="downloadItem.isNew">New</span>
                   {{downloadItem.filename}}
                 </td>
                 <td>
                   <button class="btn btn-primary" 
                           type="button" 
                           data-bs-toggle="collapse" 
-                          v-bind:data-bs-target="`#download-collapse-${downloadItem.filename}`" 
+                          v-bind:data-bs-target="`#download-collapse-${downloadItem.hash}`" 
                           aria-expanded="true" 
-                          v-bind:aria-controls="`download-collapse-${downloadItem.filename}`"
-                          v-if="downloadItem.completed">
+                          v-bind:aria-controls="`download-collapse-${downloadItem.hash}`"
+                          v-if="downloadItem.completed && downloadItem.installationItems.length > 0">
                     Show installation
                   </button>
+                  <button class="btn btn-primary disabled"
+                          type="button" 
+                          data-bs-toggle="collapse" 
+                          v-bind:data-bs-target="`#download-collapse-${downloadItem.hash}`" 
+                          aria-expanded="true" 
+                          v-bind:aria-controls="`download-collapse-${downloadItem.hash}`"
+                          v-if="downloadItem.completed && downloadItem.installationItems.length === 0">
+                    No installation
+                  </button>
+                </td>
+                <td>
                   <button class="btn btn-danger" @click="downloadItems.delete(downloadItem)">Delete</button>
                 </td>
               </tr>
@@ -63,7 +81,7 @@
                 </tr>
                 <tr v-if="downloadItem.installationItems.length > 0" 
                     class="collapse" 
-                    v-bind:id="`download-collapse-${downloadItem.filename}`">
+                    v-bind:id="`download-collapse-${downloadItem.hash}`">
                   <td colspan="100%">
                     <div class="card card-body">
                       <table class="table table-hover">
@@ -136,7 +154,10 @@
               </thread>
               <tbody>
                 <tr v-for="cursorScheme in cursorSchemes">
-                  <td><label>{{cursorScheme.name}}</label></td>
+                  <td>
+                    <span class="badge bg-primary" v-if="cursorScheme.isNew">New</span>
+                    <label>{{cursorScheme.name}}</label>
+                  </td>
                   <td><img v-bind:src="aniCacher[cursorScheme.normalCursorPath]" height="30"/></td>
                   <td><img v-bind:src="aniCacher[cursorScheme.appStartingCursorPath]" height="30"/></td>
                   <td><img v-bind:src="aniCacher[cursorScheme.waitCursorPath]" height="30"/></td>
