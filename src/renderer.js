@@ -45,8 +45,7 @@ function openWebsiteInNewWindow(url) {
   const newWindow = window.open(url, '', 'height=768,width=1024');
 }
 
-async function refresh() {
-  await cursorSchemes.refresh();
+async function loadIcons() {
   for (const cursorScheme of cursorSchemes) {
     await aniCacher.initializeCursorPath(cursorScheme.normalCursorPath);
     await aniCacher.initializeCursorPath(cursorScheme.handCursorPath);
@@ -59,8 +58,30 @@ async function refresh() {
       await aniCacher.initializeCursorPath(installationItem.handCursorPath);
       await aniCacher.initializeCursorPath(installationItem.appStartingCursorPath);
       await aniCacher.initializeCursorPath(installationItem.waitCursorPath);
+      if (cursorSchemes.isInstalled(installationItem.name)) {
+        installationItem.setInstalled();
+      }
     }
   }
+}
+
+async function refresh() {
+  await cursorSchemes.refresh();
+  await loadIcons();
+}
+
+async function install(installationItem) {
+  await installationItem.install();
+  await refresh();
+}
+
+async function deleteCursorScheme(cursorScheme) {
+  await cursorSchemes.delete(cursorScheme.name);
+  await refresh();
+}
+
+async function applyCursorScheme(cursorScheme) {
+  await cursorSchemes.apply(cursorScheme.name);
 }
 
 await refresh();
@@ -91,6 +112,9 @@ const vueApp = Vue.createApp({
       cursorSize: cursorSize,
       setCursorSize: setCursorSize,
       refresh: refresh,
+      install: install,
+      deleteCursorScheme: deleteCursorScheme,
+      applyCursorScheme: applyCursorScheme,
     }
   }
 })

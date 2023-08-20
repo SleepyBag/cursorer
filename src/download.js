@@ -40,8 +40,8 @@ export class AddRegItem {
 
 export class InstallationItem {
     constructor(infPath, infItem) {
-        this.broken = false;
         try {
+            this.setToBeInstalled();
             this.filename = infPath;
             const stringMap = {};
             for (const stringDefinition in infItem.Strings) {
@@ -103,10 +103,26 @@ export class InstallationItem {
             }
         }
         catch (e) {
-            this.broken = true;
+            this.setBroken();
             this.error = e;
             console.log(e);
         }
+    }
+
+    setToBeInstalled() {
+        this.state = 'to-be-installed';
+    }
+
+    setInstalled() {
+        this.state = 'installed';
+    }
+
+    setInstalling() {
+        this.state = 'installing';
+    }
+
+    setBroken() {
+        this.state = 'broken';
     }
 
     async initialize() {
@@ -120,6 +136,7 @@ export class InstallationItem {
 
     async install() {
         try {
+            this.setInstalling();
             this.progress = 0;
             var finished = 0;
             const total = this.copyFiles.length + 1;
@@ -137,8 +154,10 @@ export class InstallationItem {
                     }
                 }
             });
+            this.setInstalled();
         }
         catch (e) {
+            this.setToBeInstalled();
             alert(`Installation fail because of the following error: \n${e}`);
         }
     }

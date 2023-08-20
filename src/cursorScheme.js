@@ -5,6 +5,7 @@ const cursorSchemesPath = 'HKCU\\Control Panel\\Cursors\\Schemes';
 class CursorScheme {
     constructor(name, paths) {
         this.name = name;
+        this.setToBeApplied();
 
         paths = paths.split(',');
         this.paths = {};
@@ -30,6 +31,18 @@ class CursorScheme {
         }
         return valuesToPut;
     }
+
+    setToBeApplied() {
+        this.state = 'to-be-applied';
+    }
+
+    setApplying() {
+        this.state = 'applying';
+    }
+
+    setApplied() {
+        this.state = 'applied';
+    }
 }
 
 export class CursorSchemeList {
@@ -51,6 +64,7 @@ export class CursorSchemeList {
 
     async apply(cursorSchemeName) {
         const cursorScheme = this.get(cursorSchemeName);
+        cursorScheme.setApplying();
         console.log(`Setting cursor scheme to "${cursorScheme.name}"`);
         const valuesToPut = cursorScheme.toRegValue();
         regedit.putValue({ [cursorSelectionPath]: valuesToPut }, error => {
@@ -63,6 +77,10 @@ export class CursorSchemeList {
                     console.log(`Error: ${error}`);
                     console.log(`Stdout: ${stdout}`);
                     console.log(`Stderr: ${stderr}`);
+                    for (const cs of this) {
+                        cs.setToBeApplied();
+                    }
+                    cursorScheme.setApplied();
                 });
             }
         });
@@ -96,6 +114,8 @@ export class CursorSchemeList {
     }
 
     [Symbol.iterator]() {
-        return Object.values(this.cursorSchemes).values();
+        return Object.values(this.cursorSchemes)
+                     .toSorted((a, b) => a.name.localeCompare(b.name))
+                     .values();
     }
 }

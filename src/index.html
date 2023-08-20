@@ -76,12 +76,17 @@
                           <td><img v-bind:src="aniCacher[installationItem.waitCursorPath]" height="30"/></td>
                           <td><img v-bind:src="aniCacher[installationItem.handCursorPath]" height="30"/></td>
                           <td>
-                            <button v-if="!installationItem.broken && !cursorSchemes.isInstalled(installationItem.name)"
+                            <button v-if="installationItem.state === 'to-be-installed'"
                                     class="btn btn-primary"
-                                    @click="installationItem.install(); refresh()">Install</button>
-                            <button v-if="!installationItem.broken && cursorSchemes.isInstalled(installationItem.name)"
+                                    @click="install(installationItem)">Install</button>
+                            <button v-if="installationItem.state === 'installing'"
+                                    class="btn btn-primary" type="button" disabled>
+                              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                              Installing...
+                            </button>
+                            <button v-if="installationItem.state === 'installed'"
                                     class="btn btn-primary disabled">Installed</button>
-                            <button v-if="installationItem.broken"
+                            <button v-if="installationItem.state === 'broken'"
                                     class="btn btn-primary disabled">Broken inf</button>
                           </td>
                           <td>
@@ -137,8 +142,17 @@
                   <td><img v-bind:src="aniCacher[cursorScheme.waitCursorPath]" height="30"/></td>
                   <td><img v-bind:src="aniCacher[cursorScheme.handCursorPath]" height="30"/></td>
                   <td>
-                    <button class="btn btn-primary" @click="cursorSchemes.apply(cursorScheme.name)">Apply</button>
-                    <button class="btn btn-danger" @click="cursorSchemes.delete(cursorScheme.name)">Delete</button>
+                    <button v-if="cursorScheme.state === 'to-be-applied'"
+                            class="btn btn-primary"
+                            @click="applyCursorScheme(cursorScheme)">Apply</button>
+                    <button v-if="cursorScheme.state === 'applying'"
+                            class="btn btn-primary" type="button" disabled>
+                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      Applying...
+                    </button>
+                    <button v-if="cursorScheme.state === 'applied'"
+                            class="btn btn-primary disabled">Applied</button>
+                    <button class="btn btn-danger" @click="deleteCursorScheme(cursorScheme)">Delete</button>
                   </td>
                   <td>
                     <div class="form-check form-switch">
