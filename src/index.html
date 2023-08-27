@@ -126,7 +126,9 @@
           </h1>
           <div class="form-group row">
             <label class="col-md-auto"><b>Random cursor</b></label>
-            <select class="form-select col" v-model="settings.randomCursorInterval" @change="settings.persist()">
+            <select class="form-select col" 
+                    v-model.number="settings.randomCursorInterval" 
+                    @change="settings.persist()">
               <option value="9007199254740991">Never</option>
               <option value="3600">Per hour</option>
               <option value="86400">Per day</option>

@@ -114,9 +114,11 @@ async function setCursorSize(newCursorSize) {
 
 var cursorSize = await getCursorSize();
 
-const settings = new Settings();
+const settings = Vue.reactive(new Settings());
+await settings.load();
 
-setInterval(trySetRandomCursorScheme, 1000);
+// check per minute
+setInterval(trySetRandomCursorScheme, 60000);
 
 async function trySetRandomCursorScheme() {
   const touchTime = (await fs.stat(".random-timer")).mtime;
