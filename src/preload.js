@@ -15,6 +15,7 @@ const bsplit = require('buffer-split');
 const ini = require('ini-win');
 const iconv = require('iconv-lite');
 const writeFileAtomic = require('write-file-atomic');
+const touch = require('touch');
 
 async function extractArchive(archivePath) {
     const extractedPath = archivePath.substring(0, archivePath.lastIndexOf('.'));
@@ -94,6 +95,7 @@ contextBridge.exposeInMainWorld('fs', fs);
 contextBridge.exposeInMainWorld('ini', ini);
 contextBridge.exposeInMainWorld('decode', iconv.decode);
 contextBridge.exposeInMainWorld('stringHash', stringHash);
+contextBridge.exposeInMainWorld('touch', touch);
 contextBridge.exposeInMainWorld('path', path);
 contextBridge.exposeInMainWorld('env', { "systemroot": process.env.SystemRoot });
 contextBridge.exposeInMainWorld('rootPath', rootPath);

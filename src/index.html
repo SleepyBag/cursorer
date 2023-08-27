@@ -124,9 +124,18 @@
             Cursor Settings
             <button class="btn btn-primary" @click="refresh();">Refresh</button>
           </h1>
-          <div class="row">
+          <div class="form-group row">
+            <label class="col-md-auto"><b>Random cursor</b></label>
+            <select class="form-select col" v-model="settings.randomCursorInterval" @change="settings.persist()">
+              <option value="9007199254740991">Never</option>
+              <option value="3600">Per hour</option>
+              <option value="86400">Per day</option>
+              <option value="604800">Per week</option>
+            </select>
+          </div>
+          <div class="form-group row">
             <div class="col-md-auto">
-              <label for="cursor-size" class="form-label">Cursor Size</label>
+              <label for="cursor-size" class="form-label"><b>Cursor Size</b></label>
             </div>
             <div class="col">
               <input type="range" class="form-range" min="10" max="100" step="1" id="cursor-size" 
@@ -144,12 +153,6 @@
                 <th>Action</th>
                 <th>
                   <label>Random cursor</label>
-                  <select class="form-select" aria-label="Default select example">
-                    <option selected>Never</option>
-                    <option value="1">Per hour</option>
-                    <option value="2">Per day</option>
-                    <option value="3">Per week</option>
-                  </select>
                 </th>
               </thread>
               <tbody>
@@ -177,7 +180,9 @@
                   </td>
                   <td>
                     <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+                      <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" 
+                             v-model="settings.randomSchemeCandidates[cursorScheme.name]"
+                             @change="settings.persist()" />
                     </div>
                   </td>
                 </tr>

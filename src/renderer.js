@@ -1,6 +1,7 @@
 import { AniCacher } from './aniCache.js'
 import { DownloadList } from './download.js'
 import { CursorSchemeList } from './cursorScheme.js'
+import { Settings } from './settings.js'
 
 const cursorSchemes = Vue.reactive(new CursorSchemeList());
 const aniCacher = Vue.reactive(new AniCacher(rootPath));
@@ -113,6 +114,28 @@ async function setCursorSize(newCursorSize) {
 
 var cursorSize = await getCursorSize();
 
+const settings = new Settings();
+
+setInterval(trySetRandomCursorScheme, 1000);
+
+async function trySetRandomCursorScheme() {
+  const touchTime = (await fs.stat(".random-timer")).mtime;
+  const now = new Date();
+  if (now - touchTime > settings.randomCursorInterval * 1000) {
+    const schemeNames = Object.keys(settings.randomSchemeCandidates)
+      .filter(schemeName => settings.randomSchemeCandidates[schemeName])
+      .toSorted((a, b) => Math.random() > .5 ? 1 : -1);
+    console.log(now, touchTime, schemeNames)
+    for (const schemeName of schemeNames) {
+      if (cursorSchemes.isInstalled(schemeName)) {
+        cursorSchemes.apply(schemeName);
+        await touch(".random-timer");
+        break;
+      }
+    }
+  }
+}
+
 const vueApp = Vue.createApp({
   data() {
     return {
@@ -127,6 +150,7 @@ const vueApp = Vue.createApp({
       install: install,
       deleteCursorScheme: deleteCursorScheme,
       applyCursorScheme: applyCursorScheme,
+      settings: settings,
     }
   }
 })
