@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Tray, Menu } = require('electron');
 const path = require('path');
 const fs = require("fs");
 
@@ -10,6 +10,7 @@ if (require('electron-squirrel-startup')) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
+    icon: "cursorer.ico",
     width: 1000,
     height: 1000,
     webPreferences: {
@@ -20,8 +21,48 @@ const createWindow = () => {
     },
   });
 
+  // minimize to tray
+  mainWindow.on('minimize', function (event) {
+    event.preventDefault();
+    mainWindow.hide();
+  });
+
+  mainWindow.on('close', function (event) {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+    return false;
+  });
+
+  const tray = new Tray("cursorer.ico");
+  tray.on('double-click', function (e) {
+    if (mainWindow.isVisible()) {
+      mainWindow.hide()
+    } else {
+      mainWindow.show()
+    }
+  });
+  const trayContextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show App', click: function () {
+        mainWindow.show();
+      }
+    },
+    {
+      label: 'Quit', click: function () {
+        app.isQuiting = true;
+        app.quit();
+      }
+    }
+  ]);
+  tray.setToolTip('Cursorer');
+  tray.setContextMenu(trayContextMenu);
+
+  // load app page
   mainWindow.loadFile('src/index.html');
 
+  // handle downloading
   mainWindow.webContents.session.on('will-download', (event, item, webContents) => {
     const downloadDirectory = path.join(app.getAppPath(), "downloads");
     const downloadPath = path.join(downloadDirectory, item.getFilename())
