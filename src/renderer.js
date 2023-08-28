@@ -121,6 +121,12 @@ await settings.load();
 setInterval(trySetRandomCursorScheme, 60000);
 
 async function trySetRandomCursorScheme() {
+  try {
+    await fs.stat(".random-timer");
+  }
+  catch {
+    await touch(".random-timer");
+  }
   const touchTime = (await fs.stat(".random-timer")).mtime;
   const now = new Date();
   if (now - touchTime > settings.randomCursorInterval * 1000) {
