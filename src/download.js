@@ -154,7 +154,8 @@ export class InstallationItem {
                 finished++;
                 this.progress = Math.round(finished / total);
             }
-            regedit.putValue({
+            await regedit.createKey(cursorSchemesPath);
+            await regedit.putValue({
                 [cursorSchemesPath]: {
                     [this.name]: {
                         value: this.addRegItem.value,
@@ -162,7 +163,6 @@ export class InstallationItem {
                     }
                 }
             });
-            this.setInstalled();
         }
         catch (e) {
             this.setToBeInstalled();
@@ -268,13 +268,18 @@ export class DownloadList {
     }
 
     async load() {
-        const valueJson = await fs.readFile(downloadItemPath, { encoding: 'utf8' });
-        const persistedValues = JSON.parse(valueJson);
-        for (const v of persistedValues) {
-            this.downloadItems[v.path] = new DownloadItem(v.path, { completed: true, extracted: v.extracted, extractedPath: v.extractedPath });
+        try {
+            const valueJson = await fs.readFile(downloadItemPath, { encoding: 'utf8' });
+            const persistedValues = JSON.parse(valueJson);
+            for (const v of persistedValues) {
+                this.downloadItems[v.path] = new DownloadItem(v.path, { completed: true, extracted: v.extracted, extractedPath: v.extractedPath });
+            }
+            for (const downloadItem of Object.values(this.downloadItems)) {
+                await downloadItem.initialize();
+            }
         }
-        for (const downloadItem of Object.values(this.downloadItems)) {
-            await downloadItem.initialize();
+        catch {
+            console.log(`Download item path ${downloadItemPath} doesn't exists or crashed, skip loading.`);
         }
     }
 

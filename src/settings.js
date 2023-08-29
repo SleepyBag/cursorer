@@ -5,11 +5,16 @@ export class Settings {
     randomSchemeCandidates = {};
 
     async load() {
-        const valueJson = await fs.readFile(settingsPath, { encoding: 'utf8' });
-        const jsonSettings = JSON.parse(valueJson);
-        this.randomCursorInterval = jsonSettings.randomCursorInterval;
-        for (const schemeName of jsonSettings.randomSchemeCandidates) {
-            this.randomSchemeCandidates[schemeName] = true;
+        try {
+            const valueJson = await fs.readFile(settingsPath, { encoding: 'utf8' });
+            const jsonSettings = JSON.parse(valueJson);
+            this.randomCursorInterval = jsonSettings.randomCursorInterval;
+            for (const schemeName of jsonSettings.randomSchemeCandidates) {
+                this.randomSchemeCandidates[schemeName] = true;
+            }
+        }
+        catch {
+            console.log(`Settings path ${settingsPath} doesn't exists or crashed, skip loading.`);
         }
     }
 

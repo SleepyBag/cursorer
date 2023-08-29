@@ -70,7 +70,7 @@ export class CursorSchemeList {
         cursorScheme.setApplying();
         console.log(`Setting cursor scheme to "${cursorScheme.name}"`);
         const valuesToPut = cursorScheme.toRegValue();
-        regedit.putValue({ [cursorSelectionPath]: valuesToPut }, error => {
+        await regedit.putValue({ [cursorSelectionPath]: valuesToPut }, error => {
             if (error !== undefined) {
                 console.log(`Error when setting cursor scheme: ${error}`);
             } else {
@@ -93,7 +93,7 @@ export class CursorSchemeList {
         const cursorScheme = this.get(cursorSchemeName);
         if (confirm(`Deleting cursor scheme ${cursorScheme.name}?`)) {
             console.log(`Deleting cursor scheme to "${cursorScheme.name}"`);
-            regedit.deleteValue(cursorSchemesPath + '\\' + cursorScheme.name, error => {
+            await regedit.deleteValue(cursorSchemesPath + '\\' + cursorScheme.name, error => {
                 if (error !== undefined) {
                     console.log(`Error when deleting cursor scheme: ${error}`);
                 } else {
